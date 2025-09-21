@@ -2,8 +2,8 @@
 Base entity implementation.
 """
 from abc import ABC
-from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 
 class Entity(ABC):

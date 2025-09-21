@@ -2,9 +2,9 @@
 Модели данных для системы уведомлений.
 """
 
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class NotificationType(str, Enum):
@@ -27,9 +27,9 @@ class User:
     """Модель пользователя."""
     id: str
     name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    telegram_chat_id: Optional[str] = None
+    email: str | None = None
+    phone: str | None = None
+    telegram_chat_id: str | None = None
 
 
 @dataclass
@@ -37,9 +37,9 @@ class NotificationMessage:
     """Модель сообщения уведомления."""
     subject: str
     content: str
-    template_data: Optional[Dict[str, Any]] = None
-    
-    def render(self) -> Dict[str, str]:
+    template_data: dict[str, Any] | None = None
+
+    def render(self) -> dict[str, str]:
         """Подготавливает сообщение для отправки."""
         if self.template_data:
             subject = self.subject.format(**self.template_data)
@@ -47,7 +47,7 @@ class NotificationMessage:
         else:
             subject = self.subject
             content = self.content
-        
+
         return {
             "subject": subject,
             "content": content
@@ -60,5 +60,5 @@ class NotificationResult:
     success: bool
     provider: NotificationType
     message: str
-    error: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    error: str | None = None
+    metadata: dict[str, Any] | None = None

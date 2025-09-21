@@ -21,7 +21,13 @@ from ...domain.value_objects.notification import (
     NotificationId,
     NotificationPriority,
 )
-from ...domain.value_objects.user import Email, PhoneNumber, TelegramId, UserId
+from ...domain.value_objects.user import (
+    Email,
+    PhoneNumber,
+    TelegramChatId,
+    UserId,
+    UserName,
+)
 from .models import DeliveryModel, NotificationModel, UserModel
 
 
@@ -33,14 +39,16 @@ class SQLAlchemyUserRepository(UserRepository):
 
     def _model_to_entity(self, model: UserModel) -> User:
         """Convert UserModel to User entity."""
+        # Create a fake name from email or ID since name is required but not in the model
+        name_value = model.email or f"user_{model.id}"
+
         return User(
-            id=UserId(model.id),
+            user_id=UserId(model.id),
+            name=UserName(name_value),
             email=Email(model.email) if model.email else None,
-            phone_number=PhoneNumber(model.phone_number) if model.phone_number else None,
-            telegram_id=TelegramId(model.telegram_id) if model.telegram_id else None,
-            is_active=model.is_active,
-            preferences=model.preferences or {},
-            created_at=model.created_at
+            phone=PhoneNumber(model.phone_number) if model.phone_number else None,
+            telegram_chat_id=TelegramChatId(model.telegram_id) if model.telegram_id else None,
+            is_active=model.is_active
         )
 
     def _entity_to_model(self, entity: User) -> UserModel:
@@ -48,11 +56,9 @@ class SQLAlchemyUserRepository(UserRepository):
         return UserModel(
             id=entity.id.value,
             email=entity.email.value if entity.email else None,
-            phone_number=entity.phone_number.value if entity.phone_number else None,
-            telegram_id=entity.telegram_id.value if entity.telegram_id else None,
-            is_active=entity.is_active,
-            preferences=entity.preferences,
-            created_at=entity.created_at
+            phone_number=entity.phone.value if entity.phone else None,
+            telegram_id=entity.telegram_chat_id.value if entity.telegram_chat_id else None,
+            is_active=entity.is_active
         )
 
     async def save(self, user: User) -> None:
@@ -64,8 +70,8 @@ class SQLAlchemyUserRepository(UserRepository):
         if existing_user:
             # Update existing user
             existing_user.email = user.email.value if user.email else None
-            existing_user.phone_number = user.phone_number.value if user.phone_number else None
-            existing_user.telegram_id = user.telegram_id.value if user.telegram_id else None
+            existing_user.phone_number = user.phone.value if user.phone else None
+            existing_user.telegram_id = user.telegram_chat_id.value if user.telegram_chat_id else None
             existing_user.is_active = user.is_active
             existing_user.preferences = user.preferences
         else:
@@ -85,7 +91,7 @@ class SQLAlchemyUserRepository(UserRepository):
 
     async def get_all_active(self) -> list[User]:
         """Get all active users."""
-        stmt = select(UserModel).where(UserModel.is_active == True)
+        stmt = select(UserModel).where(UserModel.is_active)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
 
@@ -117,7 +123,7 @@ class SQLAlchemyNotificationRepository(NotificationRepository):
             priority=NotificationPriority(model.priority),
             scheduled_at=model.scheduled_at,
             retry_policy=model.retry_policy,
-            metadata=model.metadata or {},
+            metadata=model.notification_metadata or {},
             created_at=model.created_at
         )
 
@@ -132,7 +138,7 @@ class SQLAlchemyNotificationRepository(NotificationRepository):
             priority=entity.priority.value,
             scheduled_at=entity.scheduled_at,
             retry_policy=entity.retry_policy,
-            metadata=entity.metadata,
+            notification_metadata=entity.metadata,
             created_at=entity.created_at
         )
 
@@ -150,7 +156,7 @@ class SQLAlchemyNotificationRepository(NotificationRepository):
             existing_notification.priority = notification.priority.value
             existing_notification.scheduled_at = notification.scheduled_at
             existing_notification.retry_policy = notification.retry_policy
-            existing_notification.metadata = notification.metadata
+            existing_notification.notification_metadata = notification.metadata
         else:
             # Create new notification
             new_notification = self._entity_to_model(notification)
@@ -228,7 +234,7 @@ class SQLAlchemyDeliveryRepository(DeliveryRepository):
             priority=NotificationPriority(model.notification.priority),
             scheduled_at=model.notification.scheduled_at,
             retry_policy=model.notification.retry_policy,
-            metadata=model.notification.metadata or {},
+            metadata=model.notification.notification_metadata or {},
             created_at=model.notification.created_at
         )
 

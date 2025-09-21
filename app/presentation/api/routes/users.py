@@ -156,26 +156,6 @@ try:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 except ImportError:
-    # Mock router for when FastAPI is not available
-    class MockRouter:
-        def post(self, path: str, **kwargs):
-            def decorator(func):
-                return func
-            return decorator
-
-        def get(self, path: str, **kwargs):
-            def decorator(func):
-                return func
-            return decorator
-
-        def put(self, path: str, **kwargs):
-            def decorator(func):
-                return func
-            return decorator
-
-        def delete(self, path: str, **kwargs):
-            def decorator(func):
-                return func
-            return decorator
-
-    router = MockRouter()
+    # Fallback for when dependencies are not available - create real APIRouter
+    from fastapi import APIRouter
+    router = APIRouter()

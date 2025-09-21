@@ -71,7 +71,7 @@ try:
                 use_case = container.create_user_use_case()
                 user_response = await use_case.execute(dto)
 
-                click.echo("✅ User created successfully!")
+                click.echo("User created successfully!")
                 click.echo(f"   ID: {user_response.id}")
                 click.echo(f"   Email: {user_response.email or 'Not set'}")
                 click.echo(f"   Phone: {user_response.phone_number or 'Not set'}")
@@ -169,7 +169,7 @@ try:
                 use_case = container.send_notification_use_case()
                 notification_response = await use_case.execute(dto)
 
-                click.echo("✅ Notification sent successfully!")
+                click.echo("Notification sent successfully!")
                 click.echo(f"   ID: {notification_response.id}")
                 click.echo(f"   Recipient: {notification_response.recipient_id}")
                 click.echo(f"   Channels: {', '.join(notification_response.channels)}")
@@ -250,7 +250,7 @@ try:
 
             app = create_app()
 
-            click.echo(f"🚀 Starting server on {host}:{port}")
+            click.echo(f"Starting server on {host}:{port}")
             if reload:
                 click.echo("🔄 Auto-reload enabled")
 

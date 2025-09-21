@@ -1,21 +1,20 @@
 """
 Test configuration and fixtures.
 """
-import asyncio
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from typing import Generator, AsyncGenerator
-from unittest.mock import Mock, AsyncMock
 
 try:
     import pytest_asyncio
-    
+
     @pytest_asyncio.fixture
     async def async_session():
         """Fixture for async test session."""
         # This would be a real database session in a full implementation
         mock_session = Mock()
         yield mock_session
-        
+
 except ImportError:
     # Fallback fixture for when pytest-asyncio is not available
     @pytest.fixture

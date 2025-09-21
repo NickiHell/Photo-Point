@@ -4,20 +4,16 @@ Dependency injection container and dependency providers.
 
 try:
     from dependency_injector import containers, providers
-    from dependency_injector.wiring import Provide, inject
 
     from ..application.use_cases.notification_sending import (
-        GetNotificationStatusUseCase,
         SendBulkNotificationUseCase,
         SendNotificationUseCase,
     )
     from ..application.use_cases.user_management import (
         CreateUserUseCase,
-        DeleteUserUseCase,
         GetUserUseCase,
         UpdateUserUseCase,
     )
-    from ..domain.services import NotificationProviderInterface
     from ..infrastructure.adapters.email_adapter import EmailNotificationAdapter
     from ..infrastructure.adapters.sms_adapter import SMSNotificationAdapter
     from ..infrastructure.adapters.telegram_adapter import TelegramNotificationAdapter

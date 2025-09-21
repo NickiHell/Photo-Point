@@ -48,7 +48,7 @@ try:
         scheduled_at = Column(DateTime, nullable=False)
         sent_at = Column(DateTime, nullable=True)
         retry_policy = Column(JSON, default=dict)
-        metadata = Column(JSON, default=dict)
+        notification_metadata = Column(JSON, default=dict)
         created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
         # Relationships

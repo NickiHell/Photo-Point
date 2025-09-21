@@ -7,8 +7,10 @@ from ..dto import (
     CreateUserDTO,
     NotificationResponseDTO,
     SendNotificationDTO,
-    UpdateUserDTO,
     UserResponseDTO,
+)
+from ..dto import (
+    UpdateUserDTO as UpdateUserDTO,  # Explicit re-export
 )
 
 

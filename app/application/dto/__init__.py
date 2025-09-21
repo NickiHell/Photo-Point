@@ -4,7 +4,7 @@ Data Transfer Objects for the application layer.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 # Request DTOs
@@ -139,3 +139,162 @@ class NotificationStatusResponseDTO:
     status: str
     created_at: datetime
     deliveries: list[DeliveryInfoDTO]
+
+
+# Additional DTOs required by Use Cases
+@dataclass
+class CreateUserRequest:
+    """Request DTO for creating a user."""
+
+    name: str
+    email: str | None = None
+    phone: str | None = None
+    telegram_chat_id: str | None = None
+    preferences: list[str] | None = None
+
+    def __post_init__(self):
+        if self.preferences is None:
+            self.preferences = []
+
+
+@dataclass
+class UpdateUserRequest:
+    """Request DTO for updating a user."""
+
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    telegram_chat_id: str | None = None
+    is_active: bool | None = None
+    preferences: list[str] | None = None
+
+
+@dataclass
+class UserResponse:
+    """Response DTO for user information."""
+
+    id: str
+    name: str
+    email: str | None = None
+    phone: str | None = None
+    telegram_chat_id: str | None = None
+    is_active: bool = True
+    preferences: list[str] | None = None
+    available_channels: list[str] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    def __post_init__(self):
+        if self.preferences is None:
+            self.preferences = []
+        if self.available_channels is None:
+            self.available_channels = []
+
+
+@dataclass
+class SendNotificationRequest:
+    """Request DTO for sending a notification."""
+
+    recipient_id: str
+    subject: str
+    content: str
+    template_data: dict[str, Any] | None = None
+    priority: str = "MEDIUM"
+    channels: list[str] | None = None
+    strategy: str | None = None  # Changed from delivery_strategy
+    scheduled_at: datetime | None = None
+    expires_at: datetime | None = None
+
+    def __post_init__(self):
+        if self.template_data is None:
+            self.template_data = {}
+        if self.channels is None:
+            self.channels = []
+
+
+@dataclass
+class BulkNotificationRequest:
+    """Request DTO for bulk notification sending."""
+
+    recipient_ids: list[str]
+    subject: str
+    content: str
+    template_data: dict[str, Any] | None = None
+    priority: str = "MEDIUM"
+    channels: list[str] | None = None
+    strategy: str = "FIRST_SUCCESS"  # Changed from delivery_strategy
+    max_concurrent: int = 10
+    scheduled_at: datetime | None = None
+    expires_at: datetime | None = None
+
+    def __post_init__(self):
+        if self.template_data is None:
+            self.template_data = {}
+        if self.channels is None:
+            self.channels = []
+
+
+@dataclass
+class OperationResponse:
+    """Generic operation response DTO."""
+
+    success: bool
+    message: str
+    data: Any = None
+    errors: list[str] | None = None
+
+    def __post_init__(self):
+        if self.errors is None:
+            self.errors = []
+
+
+@dataclass
+class DeliveryAttemptResponse:
+    """Response DTO for delivery attempt information."""
+
+    id: str
+    delivery_id: str
+    provider: str
+    channel: str
+    status: str
+    error_message: str | None = None
+    response_data: dict[str, Any] | None = None
+    attempted_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration: float = 0.0
+    metadata: dict[str, Any] | None = None
+
+    def __post_init__(self):
+        if self.response_data is None:
+            self.response_data = {}
+        if self.metadata is None:
+            self.metadata = {}
+
+
+@dataclass
+class DeliveryResponse:
+    """Response DTO for delivery information."""
+
+    id: str
+    notification_id: str
+    user_id: str
+    status: str
+    strategy: str
+    attempts: list[DeliveryAttemptResponse]
+    total_attempts: int
+    successful_providers: list[str]
+    failed_providers: list[str]
+    started_at: datetime
+    completed_at: datetime | None = None
+    total_delivery_time: float = 0.0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    success: bool = False
+
+    def __post_init__(self):
+        if self.attempts is None:
+            self.attempts = []
+        if self.successful_providers is None:
+            self.successful_providers = []
+        if self.failed_providers is None:
+            self.failed_providers = []

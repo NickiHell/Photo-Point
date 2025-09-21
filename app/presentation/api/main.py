@@ -10,32 +10,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Import and include routers
+try:
+    from .routes.deliveries import router as deliveries_router
+    from .routes.health import router as health_router
+    from .routes.notifications import router as notifications_router
+    from .routes.users import router as users_router
+
+    # Include routers
+    app.include_router(health_router, prefix="/health", tags=["health"])
+    app.include_router(users_router, prefix="/users", tags=["users"])
+    app.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
+    app.include_router(deliveries_router, prefix="/deliveries", tags=["deliveries"])
+
+except ImportError:
+    # Fallback when routers are not available
+    pass
+
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {"message": "Notification Service API", "version": "1.0.0"}
-
-
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "notification-service"}
-
-
-@app.get("/api/v1/users")
-async def list_users():
-    """List users endpoint (placeholder)."""
-    return {"users": []}
-
-
-@app.post("/api/v1/users")
-async def create_user():
-    """Create user endpoint (placeholder)."""
-    return {"message": "User creation endpoint"}
-
-
-@app.post("/api/v1/notifications/send")
-async def send_notification():
-    """Send notification endpoint (placeholder)."""
-    return {"message": "Notification sent"}
