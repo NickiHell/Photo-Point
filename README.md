@@ -14,6 +14,44 @@
 
 ## Быстрый старт
 
+### Вариант 1: Запуск с Docker (рекомендуется)
+
+```bash
+# Клонирование репозитория
+git clone https://github.com/NickiHell/Photo-Point.git
+cd Photo-Point/notification_service
+
+# Создание и настройка .env файла
+cp .env.example .env
+# Отредактируйте .env с вашими настройками
+
+# Сборка и запуск через Docker Compose
+docker-compose up --build
+
+# Для запуска в фоне
+docker-compose up -d --build
+
+# Проверка работы
+curl http://localhost:8000/health
+```
+
+### Вариант 2: Разработка с Virtual Environment
+
+```bash
+# Создание виртуального окружения
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# или .venv\Scripts\activate  # Windows
+
+# Установка зависимостей
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Запуск сервера для разработки
+export PYTHONPATH=$PWD
+uvicorn app.presentation.api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
 ### 1. Установка зависимостей
 
 ```bash
@@ -238,6 +276,117 @@ LOG_LEVEL=INFO
 
 ## Тестирование
 
+### Запуск всех тестов
+
+```bash
+# Активация виртуального окружения (если используется)
+source .venv/bin/activate
+
+# Запуск архитектурных тестов
+python test_architecture.py
+
+# Запуск полного end-to-end теста
+python test_comprehensive.py
+
+# Запуск unit тестов с pytest
+pytest tests/ -v
+
+# Тест с покрытием кода
+pytest tests/ --cov=app --cov-report=html
+```
+
+### Проверка кода и форматирование
+
+```bash
+# Установка инструментов для разработки (если не установлены)
+pip install ruff black mypy isort
+
+# Форматирование кода с помощью Black
+black app/ tests/ --line-length 88
+
+# Форматирование с помощью Ruff
+ruff format app/ tests/
+
+# Проверка кода с помощью Ruff (замена flake8 + isort)
+ruff check app/ tests/
+
+# Исправление автоматически исправимых ошибок
+ruff check --fix app/ tests/
+
+# Проверка типов с MyPy
+mypy app/ --ignore-missing-imports
+
+# Сортировка импортов
+isort app/ tests/ --profile black
+```
+
+### Docker команды для разработки
+
+```bash
+# Сборка образа
+docker build -t notification-service .
+
+# Запуск контейнера
+docker run -p 8000:8000 --env-file .env notification-service
+
+# Запуск с монтированием кода (для разработки)
+docker run -p 8000:8000 -v $(pwd):/app --env-file .env notification-service
+
+# Проверка логов
+docker-compose logs -f notification-service
+
+# Остановка всех сервисов
+docker-compose down
+
+# Полная пересборка
+docker-compose down --volumes --remove-orphans
+docker-compose build --no-cache
+docker-compose up
+```
+
+### Pre-commit hooks (рекомендуется)
+
+```bash
+# Установка pre-commit
+pip install pre-commit
+
+# Установка хуков
+pre-commit install
+
+# Запуск проверок вручную
+pre-commit run --all-files
+```
+
+### Makefile команды (быстрый доступ)
+
+```bash
+# Показать все доступные команды
+make help
+
+# Настройка проекта с нуля
+make setup          # Создает .venv
+source .venv/bin/activate
+make dev-install    # Устанавливает зависимости и pre-commit
+
+# Разработка
+make format         # Форматирование кода (black + isort + ruff format)
+make lint           # Проверка кода (ruff + mypy + bandit)
+make lint-fix       # Автоматическое исправление проблем
+make test           # Запуск всех тестов
+make test-cov       # Тесты с покрытием кода
+
+# Docker
+make docker-build   # Сборка образа
+make docker-compose # Запуск через docker-compose
+make docker-dev     # Запуск для разработки
+make docker-clean   # Очистка Docker ресурсов
+
+# Утилиты  
+make clean          # Очистка кэша и временных файлов
+make run-dev        # Запуск dev сервера
+make all            # Полная проверка (clean + lint + format + test)
+```
+
 ### Запуск тестов
 
 ```bash
@@ -388,6 +537,32 @@ report = await service.send_notification(user, message)
 print(f"Время доставки: {report.delivery_time:.2f} сек")
 print(f"Количество попыток: {report.total_attempts}")
 print(f"Успешные провайдеры: {report.successful_providers}")
+```
+
+## Быстрые команды для разработки
+
+```bash
+# 🚀 Мгновенный запуск всей системы
+git clone https://github.com/NickiHell/Photo-Point.git
+cd Photo-Point/notification_service
+docker-compose up --build
+
+# 🛠️ Разработка (локально)
+make setup                    # Создать .venv  
+source .venv/bin/activate     # Активировать окружение
+make dev-install              # Установить все зависимости
+make run-dev                  # Запустить сервер разработки
+
+# ✅ Проверка качества кода
+make format                   # Форматирование (ruff + black)
+make lint                     # Проверка кода (ruff + mypy)  
+make test                     # Запуск всех тестов
+make all                      # Полная проверка
+
+# 🐳 Docker команды
+make docker-compose           # Запуск в контейнерах
+make docker-dev              # Разработка с Docker
+make docker-clean            # Очистка Docker ресурсов
 ```
 
 ## FAQ

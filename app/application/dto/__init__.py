@@ -1,20 +1,22 @@
 """
 Data Transfer Objects for the application layer.
 """
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 # Request DTOs
 @dataclass
 class CreateUserDTO:
     """DTO for creating a user."""
-    email: Optional[str] = None
-    phone_number: Optional[str] = None
-    telegram_id: Optional[str] = None
-    preferences: Dict[str, Any] = None
-    
+
+    email: str | None = None
+    phone_number: str | None = None
+    telegram_id: str | None = None
+    preferences: dict[str, Any] = None
+
     def __post_init__(self):
         if self.preferences is None:
             self.preferences = {}
@@ -23,26 +25,28 @@ class CreateUserDTO:
 @dataclass
 class UpdateUserDTO:
     """DTO for updating a user."""
+
     user_id: str
-    email: Optional[str] = None
-    phone_number: Optional[str] = None
-    telegram_id: Optional[str] = None
-    is_active: Optional[bool] = None
-    preferences: Optional[Dict[str, Any]] = None
+    email: str | None = None
+    phone_number: str | None = None
+    telegram_id: str | None = None
+    is_active: bool | None = None
+    preferences: dict[str, Any] | None = None
 
 
 @dataclass
 class SendNotificationDTO:
     """DTO for sending a notification."""
+
     recipient_id: str
     message_template: str
-    message_variables: Dict[str, Any] = None
-    channels: List[str] = None
+    message_variables: dict[str, Any] = None
+    channels: list[str] = None
     priority: str = "MEDIUM"
-    scheduled_at: Optional[datetime] = None
-    retry_policy: Dict[str, Any] = None
-    metadata: Dict[str, Any] = None
-    
+    scheduled_at: datetime | None = None
+    retry_policy: dict[str, Any] = None
+    metadata: dict[str, Any] = None
+
     def __post_init__(self):
         if self.message_variables is None:
             self.message_variables = {}
@@ -57,15 +61,16 @@ class SendNotificationDTO:
 @dataclass
 class SendBulkNotificationDTO:
     """DTO for sending bulk notifications."""
-    recipient_ids: List[str]
+
+    recipient_ids: list[str]
     message_template: str
-    message_variables: Dict[str, Any] = None
-    channels: List[str] = None
+    message_variables: dict[str, Any] = None
+    channels: list[str] = None
     priority: str = "MEDIUM"
-    scheduled_at: Optional[datetime] = None
-    retry_policy: Dict[str, Any] = None
-    metadata: Dict[str, Any] = None
-    
+    scheduled_at: datetime | None = None
+    retry_policy: dict[str, Any] = None
+    metadata: dict[str, Any] = None
+
     def __post_init__(self):
         if self.message_variables is None:
             self.message_variables = {}
@@ -81,22 +86,24 @@ class SendBulkNotificationDTO:
 @dataclass
 class UserResponseDTO:
     """Response DTO for user information."""
+
     id: str
-    email: Optional[str]
-    phone_number: Optional[str]
-    telegram_id: Optional[str]
+    email: str | None
+    phone_number: str | None
+    telegram_id: str | None
     is_active: bool
-    preferences: Dict[str, Any]
+    preferences: dict[str, Any]
     created_at: datetime
 
 
 @dataclass
 class NotificationResponseDTO:
     """Response DTO for notification information."""
+
     id: str
     recipient_id: str
     message_template: str
-    channels: List[str]
+    channels: list[str]
     priority: str
     scheduled_at: datetime
     created_at: datetime
@@ -106,26 +113,29 @@ class NotificationResponseDTO:
 @dataclass
 class BulkNotificationResponseDTO:
     """Response DTO for bulk notification operation."""
-    notifications: List[NotificationResponseDTO]
+
+    notifications: list[NotificationResponseDTO]
     total_count: int
 
 
 @dataclass
 class DeliveryInfoDTO:
     """DTO for delivery information."""
+
     delivery_id: str
     channel: str
     provider: str
     status: str
     attempts: int
     created_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
 
 
-@dataclass 
+@dataclass
 class NotificationStatusResponseDTO:
     """Response DTO for notification status."""
+
     notification_id: str
     status: str
     created_at: datetime
-    deliveries: List[DeliveryInfoDTO]
+    deliveries: list[DeliveryInfoDTO]

@@ -2,7 +2,6 @@
 FastAPI application main module.
 """
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 
 # Create FastAPI app
 app = FastAPI(

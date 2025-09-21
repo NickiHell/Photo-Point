@@ -2,9 +2,7 @@
 Configuration management for the notification service.
 """
 import os
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from structlog import get_logger
 
@@ -20,7 +18,7 @@ class DatabaseConfig:
     username: str = "postgres"
     password: str = "password"
     echo: bool = False
-    
+
     @property
     def url(self) -> str:
         """Get database URL."""
@@ -33,8 +31,8 @@ class RedisConfig:
     host: str = "localhost"
     port: int = 6379
     db: int = 0
-    password: Optional[str] = None
-    
+    password: str | None = None
+
     @property
     def url(self) -> str:
         """Get Redis URL."""
@@ -94,7 +92,7 @@ class Config:
     """Main application configuration."""
     environment: str = "development"
     debug: bool = False
-    
+
     # Component configurations
     database: DatabaseConfig = field(default_factory=DatabaseConfig)
     redis: RedisConfig = field(default_factory=RedisConfig)
@@ -103,14 +101,14 @@ class Config:
     telegram: TelegramConfig = field(default_factory=TelegramConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     api: APIConfig = field(default_factory=APIConfig)
-    
+
     @classmethod
     def from_env(cls) -> "Config":
         """Create configuration from environment variables."""
         return cls(
             environment=os.getenv("ENVIRONMENT", "development"),
             debug=os.getenv("DEBUG", "false").lower() == "true",
-            
+
             database=DatabaseConfig(
                 host=os.getenv("DB_HOST", "localhost"),
                 port=int(os.getenv("DB_PORT", "5432")),
@@ -119,14 +117,14 @@ class Config:
                 password=os.getenv("DB_PASSWORD", "password"),
                 echo=os.getenv("DB_ECHO", "false").lower() == "true",
             ),
-            
+
             redis=RedisConfig(
                 host=os.getenv("REDIS_HOST", "localhost"),
                 port=int(os.getenv("REDIS_PORT", "6379")),
                 db=int(os.getenv("REDIS_DB", "0")),
                 password=os.getenv("REDIS_PASSWORD"),
             ),
-            
+
             email=EmailConfig(
                 smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com"),
                 smtp_port=int(os.getenv("SMTP_PORT", "587")),
@@ -136,25 +134,25 @@ class Config:
                 from_address=os.getenv("SMTP_FROM_ADDRESS", "noreply@example.com"),
                 from_name=os.getenv("SMTP_FROM_NAME", "Notification Service"),
             ),
-            
+
             sms=SMSConfig(
                 provider=os.getenv("SMS_PROVIDER", "twilio"),
                 account_sid=os.getenv("TWILIO_ACCOUNT_SID", ""),
                 auth_token=os.getenv("TWILIO_AUTH_TOKEN", ""),
                 from_number=os.getenv("TWILIO_FROM_NUMBER", ""),
             ),
-            
+
             telegram=TelegramConfig(
                 bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
                 parse_mode=os.getenv("TELEGRAM_PARSE_MODE", "HTML"),
             ),
-            
+
             logging=LoggingConfig(
                 level=os.getenv("LOG_LEVEL", "INFO"),
                 format=os.getenv("LOG_FORMAT", "json"),
                 enable_colors=os.getenv("LOG_COLORS", "true").lower() == "true",
             ),
-            
+
             api=APIConfig(
                 host=os.getenv("API_HOST", "0.0.0.0"),
                 port=int(os.getenv("API_PORT", "8000")),
@@ -164,29 +162,29 @@ class Config:
                 redoc_url=os.getenv("API_REDOC_URL", "/redoc"),
             ),
         )
-    
+
     def validate(self) -> None:
         """Validate configuration."""
         if self.environment not in ["development", "testing", "production"]:
             raise ValueError(f"Invalid environment: {self.environment}")
-        
+
         if self.environment == "production":
             # Validate production-critical settings
             if not self.database.password:
                 logger.warning("Database password not set in production")
-            
+
             if not self.email.password and self.email.username:
                 logger.warning("Email password not set but username provided")
-            
+
             if not self.sms.auth_token and self.sms.account_sid:
                 logger.warning("SMS auth token not set but account SID provided")
-            
+
             if not self.telegram.bot_token:
                 logger.warning("Telegram bot token not set")
 
 
 # Global configuration instance
-_config: Optional[Config] = None
+_config: Config | None = None
 
 
 def get_config() -> Config:

@@ -6,10 +6,10 @@ from datetime import datetime
 try:
     from fastapi import APIRouter, Depends
     from fastapi.responses import JSONResponse
-    
+
     router = APIRouter()
-    
-    
+
+
     @router.get("/")
     async def health_check():
         """Basic health check endpoint."""
@@ -19,8 +19,8 @@ try:
             "service": "notification-service",
             "version": "1.0.0"
         }
-    
-    
+
+
     @router.get("/ready")
     async def readiness_check():
         """Readiness check endpoint."""
@@ -28,7 +28,7 @@ try:
         # - Database connectivity
         # - External service availability
         # - Cache availability
-        
+
         return {
             "status": "ready",
             "timestamp": datetime.utcnow().isoformat(),
@@ -38,8 +38,8 @@ try:
                 "external_services": "healthy"
             }
         }
-    
-    
+
+
     @router.get("/live")
     async def liveness_check():
         """Liveness check endpoint."""
@@ -55,5 +55,5 @@ except ImportError:
             def decorator(func):
                 return func
             return decorator
-    
+
     router = MockRouter()
