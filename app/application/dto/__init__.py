@@ -4,132 +4,128 @@ Data Transfer Objects for the application layer.
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from dataclasses import dataclass
-from pydantic import BaseModel, Field, EmailStr
-
-from ..domain.value_objects.notification import NotificationPriority
-from ..domain.value_objects.delivery import DeliveryStrategy
 
 
-# Request DTOs (for incoming data)
-class CreateUserRequest(BaseModel):
-    """Request to create a new user."""
-    name: str = Field(..., min_length=1, max_length=200)
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, regex=r'^\+[1-9]\d{1,14}$')
-    telegram_chat_id: Optional[str] = None
-    preferences: List[str] = Field(default_factory=list)
-
-
-class UpdateUserRequest(BaseModel):
-    """Request to update user information."""
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, regex=r'^\+[1-9]\d{1,14}$')
-    telegram_chat_id: Optional[str] = None
-    preferences: Optional[List[str]] = None
-    is_active: Optional[bool] = None
-
-
-class SendNotificationRequest(BaseModel):
-    """Request to send a notification."""
-    recipient_id: str
-    subject: str = Field(..., min_length=1, max_length=500)
-    content: str = Field(..., min_length=1, max_length=10000)
-    template_data: Dict[str, Any] = Field(default_factory=dict)
-    priority: NotificationPriority = NotificationPriority.NORMAL
-    strategy: DeliveryStrategy = DeliveryStrategy.FIRST_SUCCESS
-    scheduled_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-
-
-class BulkNotificationRequest(BaseModel):
-    """Request to send bulk notifications."""
-    recipient_ids: List[str] = Field(..., min_items=1)
-    subject: str = Field(..., min_length=1, max_length=500)
-    content: str = Field(..., min_length=1, max_length=10000)
-    template_data: Dict[str, Any] = Field(default_factory=dict)
-    priority: NotificationPriority = NotificationPriority.NORMAL
-    strategy: DeliveryStrategy = DeliveryStrategy.FIRST_SUCCESS
-    max_concurrent: int = Field(10, ge=1, le=100)
-
-
-# Response DTOs (for outgoing data)
+# Request DTOs
 @dataclass
-class UserResponse:
-    """Response containing user information."""
-    id: str
-    name: str
-    email: Optional[str]
-    phone: Optional[str]
-    telegram_chat_id: Optional[str]
-    is_active: bool
-    preferences: List[str]
-    available_channels: List[str]
-    created_at: datetime
-    updated_at: datetime
+class CreateUserDTO:
+    """DTO for creating a user."""
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    telegram_id: Optional[str] = None
+    preferences: Dict[str, Any] = None
+    
+    def __post_init__(self):
+        if self.preferences is None:
+            self.preferences = {}
 
 
 @dataclass
-class NotificationResponse:
-    """Response containing notification information."""
-    id: str
-    recipient_id: str
-    subject: str
-    content: str
-    priority: str
-    is_cancelled: bool
-    scheduled_at: datetime
-    expires_at: Optional[datetime]
-    created_at: datetime
-    updated_at: datetime
-
-
-@dataclass
-class DeliveryAttemptResponse:
-    """Response containing delivery attempt information."""
-    provider: str
-    channel: str
-    attempted_at: datetime
-    success: bool
-    message: str
-    error: Optional[str]
-    delivery_time: Optional[float]
-
-
-@dataclass
-class DeliveryResponse:
-    """Response containing delivery information."""
-    id: str
-    notification_id: str
+class UpdateUserDTO:
+    """DTO for updating a user."""
     user_id: str
-    status: str
-    strategy: str
-    attempts: List[DeliveryAttemptResponse]
-    total_attempts: int
-    successful_providers: List[str]
-    failed_providers: List[str]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    total_delivery_time: Optional[float]
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    telegram_id: Optional[str] = None
+    is_active: Optional[bool] = None
+    preferences: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class SendNotificationDTO:
+    """DTO for sending a notification."""
+    recipient_id: str
+    message_template: str
+    message_variables: Dict[str, Any] = None
+    channels: List[str] = None
+    priority: str = "MEDIUM"
+    scheduled_at: Optional[datetime] = None
+    retry_policy: Dict[str, Any] = None
+    metadata: Dict[str, Any] = None
+    
+    def __post_init__(self):
+        if self.message_variables is None:
+            self.message_variables = {}
+        if self.channels is None:
+            self.channels = ["email"]
+        if self.retry_policy is None:
+            self.retry_policy = {}
+        if self.metadata is None:
+            self.metadata = {}
+
+
+@dataclass
+class SendBulkNotificationDTO:
+    """DTO for sending bulk notifications."""
+    recipient_ids: List[str]
+    message_template: str
+    message_variables: Dict[str, Any] = None
+    channels: List[str] = None
+    priority: str = "MEDIUM"
+    scheduled_at: Optional[datetime] = None
+    retry_policy: Dict[str, Any] = None
+    metadata: Dict[str, Any] = None
+    
+    def __post_init__(self):
+        if self.message_variables is None:
+            self.message_variables = {}
+        if self.channels is None:
+            self.channels = ["email"]
+        if self.retry_policy is None:
+            self.retry_policy = {}
+        if self.metadata is None:
+            self.metadata = {}
+
+
+# Response DTOs
+@dataclass
+class UserResponseDTO:
+    """Response DTO for user information."""
+    id: str
+    email: Optional[str]
+    phone_number: Optional[str]
+    telegram_id: Optional[str]
+    is_active: bool
+    preferences: Dict[str, Any]
     created_at: datetime
-    updated_at: datetime
 
 
 @dataclass
-class ServiceStatusResponse:
-    """Response containing service status information."""
-    service_status: str
-    total_providers: int
-    available_providers: int
-    providers: List[Dict[str, Any]]
-    uptime: float
-    statistics: Dict[str, Any]
+class NotificationResponseDTO:
+    """Response DTO for notification information."""
+    id: str
+    recipient_id: str
+    message_template: str
+    channels: List[str]
+    priority: str
+    scheduled_at: datetime
+    created_at: datetime
+    status: str
 
 
 @dataclass
-class OperationResponse:
-    """Generic operation response."""
-    success: bool
-    message: str
-    data: Optional[Any] = None
-    errors: List[str] = None
+class BulkNotificationResponseDTO:
+    """Response DTO for bulk notification operation."""
+    notifications: List[NotificationResponseDTO]
+    total_count: int
+
+
+@dataclass
+class DeliveryInfoDTO:
+    """DTO for delivery information."""
+    delivery_id: str
+    channel: str
+    provider: str
+    status: str
+    attempts: int
+    created_at: datetime
+    completed_at: Optional[datetime]
+
+
+@dataclass 
+class NotificationStatusResponseDTO:
+    """Response DTO for notification status."""
+    notification_id: str
+    status: str
+    created_at: datetime
+    deliveries: List[DeliveryInfoDTO]
