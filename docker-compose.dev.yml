@@ -1,0 +1,32 @@
+# Development override for docker-compose
+version: '3.8'
+
+services:
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["python", "-m", "uvicorn", "app.presentation.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - DB_ECHO=true
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # For debugging
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["python", "-m", "app.presentation.cli", "worker", "start", "--debug"]
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./app:/app/app
