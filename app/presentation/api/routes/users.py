@@ -6,156 +6,169 @@ try:
     from fastapi import APIRouter, Depends, HTTPException, status
     from pydantic import BaseModel, Field
 
-    from ....application.dto import CreateUserDTO, UpdateUserDTO, UserResponseDTO
+    from ....application.dto import (
+        CreateUserRequest,
+        UpdateUserRequest,
+        UserResponseDTO,
+    )
     from ....application.use_cases.user_management import (
         CreateUserUseCase,
-        DeleteUserUseCase,
         GetUserUseCase,
         UpdateUserUseCase,
     )
     from ....domain.value_objects.user import UserId
-    from ...dependencies import get_user_use_cases
+    from ...dependencies import (
+        get_create_user_use_case,
+        get_get_user_use_case,
+        get_update_user_use_case,
+    )
 
     router = APIRouter()
 
-
-    class CreateUserRequest(BaseModel):
+    class CreateUserRequestModel(BaseModel):
         """Create user request model."""
+
+        name: str = Field(..., description="User name")
         email: str | None = Field(None, description="User email address")
-        phone_number: str | None = Field(None, description="User phone number")
-        telegram_id: str | None = Field(None, description="User Telegram ID")
-        preferences: dict = Field(default_factory=dict, description="User preferences")
+        phone: str | None = Field(None, description="User phone number")
+        telegram_chat_id: str | None = Field(None, description="User Telegram chat ID")
+        preferences: list[str] | None = Field(None, description="User preferences")
 
-
-    class UpdateUserRequest(BaseModel):
+    class UpdateUserRequestModel(BaseModel):
         """Update user request model."""
-        email: str | None = Field(None, description="User email address")
-        phone_number: str | None = Field(None, description="User phone number")
-        telegram_id: str | None = Field(None, description="User Telegram ID")
-        is_active: bool | None = Field(None, description="User active status")
-        preferences: dict | None = Field(None, description="User preferences")
 
+        name: str | None = Field(None, description="User name")
+        email: str | None = Field(None, description="User email address")
+        phone: str | None = Field(None, description="User phone number")
+        telegram_chat_id: str | None = Field(None, description="User Telegram chat ID")
+        is_active: bool | None = Field(None, description="User active status")
+        preferences: list[str] | None = Field(None, description="User preferences")
 
     class UserResponse(BaseModel):
         """User response model."""
-        id: str = Field(description="User ID")
-        email: str | None = Field(None, description="User email address")
-        phone_number: str | None = Field(None, description="User phone number")
-        telegram_id: str | None = Field(None, description="User Telegram ID")
-        is_active: bool = Field(description="User active status")
-        preferences: dict = Field(description="User preferences")
-        created_at: str = Field(description="User creation timestamp")
 
+        id: str
+        email: str | None = None
+        phone_number: str | None = None
+        telegram_id: str | None = None
+        is_active: bool = True
+        preferences: list[str] | None = None
+        created_at: str
 
     @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
     async def create_user(
-        request: CreateUserRequest,
-        use_case: CreateUserUseCase = Depends(get_user_use_cases)
+        request: CreateUserRequestModel,
+        use_case: CreateUserUseCase = Depends(get_create_user_use_case),
     ):
         """Create a new user."""
         try:
-            dto = CreateUserDTO(
+            request_obj = CreateUserRequest(
+                name=request.name,
                 email=request.email,
-                phone_number=request.phone_number,
-                telegram_id=request.telegram_id,
-                preferences=request.preferences
+                phone=request.phone,
+                telegram_chat_id=request.telegram_chat_id,
+                preferences=request.preferences or [],
             )
 
-            user_response = await use_case.execute(dto)
+            user_response = await use_case.execute(request_obj)
+
+            if not user_response.success:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=user_response.message,
+                )
 
             return UserResponse(
-                id=user_response.id,
-                email=user_response.email,
-                phone_number=user_response.phone_number,
-                telegram_id=user_response.telegram_id,
-                is_active=user_response.is_active,
-                preferences=user_response.preferences,
-                created_at=user_response.created_at.isoformat()
+                id=user_response.data.id,
+                email=user_response.data.email,
+                phone_number=user_response.data.phone,
+                telegram_id=user_response.data.telegram_chat_id,
+                is_active=user_response.data.is_active,
+                preferences=user_response.data.preferences,
+                created_at=user_response.data.created_at.isoformat(),
             )
 
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )
 
     @router.get("/{user_id}", response_model=UserResponse)
     async def get_user(
-        user_id: str,
-        use_case: GetUserUseCase = Depends(get_user_use_cases)
+        user_id: str, use_case: GetUserUseCase = Depends(get_get_user_use_case)
     ):
         """Get user by ID."""
         try:
-            user_response = await use_case.execute(UserId(user_id))
+            user_response = await use_case.execute(user_id)
 
-            if not user_response:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            if not user_response.success or not user_response.data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+                )
 
             return UserResponse(
-                id=user_response.id,
-                email=user_response.email,
-                phone_number=user_response.phone_number,
-                telegram_id=user_response.telegram_id,
-                is_active=user_response.is_active,
-                preferences=user_response.preferences,
-                created_at=user_response.created_at.isoformat()
+                id=user_response.data.id,
+                email=user_response.data.email,
+                phone_number=user_response.data.phone,
+                telegram_id=user_response.data.telegram_chat_id,
+                is_active=user_response.data.is_active,
+                preferences=user_response.data.preferences,
+                created_at=user_response.data.created_at.isoformat(),
             )
 
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )
 
     @router.put("/{user_id}", response_model=UserResponse)
     async def update_user(
         user_id: str,
-        request: UpdateUserRequest,
-        use_case: UpdateUserUseCase = Depends(get_user_use_cases)
+        request: UpdateUserRequestModel,
+        use_case: UpdateUserUseCase = Depends(get_update_user_use_case),
     ):
         """Update user by ID."""
         try:
-            dto = UpdateUserDTO(
-                user_id=user_id,
+            request_obj = UpdateUserRequest(
+                name=request.name,
                 email=request.email,
-                phone_number=request.phone_number,
-                telegram_id=request.telegram_id,
+                phone=request.phone,
+                telegram_chat_id=request.telegram_chat_id,
                 is_active=request.is_active,
-                preferences=request.preferences
+                preferences=request.preferences,
             )
 
-            user_response = await use_case.execute(dto)
+            user_response = await use_case.execute(user_id, request_obj)
+
+            if not user_response.success:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=user_response.message,
+                )
 
             return UserResponse(
-                id=user_response.id,
-                email=user_response.email,
-                phone_number=user_response.phone_number,
-                telegram_id=user_response.telegram_id,
-                is_active=user_response.is_active,
-                preferences=user_response.preferences,
-                created_at=user_response.created_at.isoformat()
+                id=user_response.data.id,
+                email=user_response.data.email,
+                phone_number=user_response.data.phone,
+                telegram_id=user_response.data.telegram_chat_id,
+                is_active=user_response.data.is_active,
+                preferences=user_response.data.preferences,
+                created_at=user_response.data.created_at.isoformat(),
             )
 
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-
-    @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-    async def delete_user(
-        user_id: str,
-        use_case: DeleteUserUseCase = Depends(get_user_use_cases)
-    ):
-        """Delete user by ID."""
-        try:
-            await use_case.execute(UserId(user_id))
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            )
 
 except ImportError:
     # Fallback for when dependencies are not available - create real APIRouter
     from fastapi import APIRouter
+
     router = APIRouter()

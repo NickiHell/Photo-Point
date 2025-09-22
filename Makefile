@@ -25,9 +25,17 @@ format: ## Format code
 
 lint: ## Run linting
 	ruff check app/ tests/
+	./run_mypy.sh
 
 lint-fix: ## Run linting with auto-fix
 	ruff check --fix app/ tests/
+	./run_mypy.sh
+
+mypy: ## Run mypy type checking
+	./run_mypy.sh
+
+mypy-config: ## Run mypy with config file (may have issues with missing imports)
+	mypy .
 
 docker-compose: ## Run with docker-compose
 	docker-compose up --build

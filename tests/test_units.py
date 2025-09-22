@@ -79,7 +79,7 @@ class TestDomainEntities:
             phone_number=phone,
             telegram_id=telegram_id,
             preferences={"lang": "en"},
-            is_active=True
+            is_active=True,
         )
 
         # Test properties
@@ -139,7 +139,7 @@ class TestDomainEntities:
             message=message,
             channels=["email", "sms"],
             priority=priority,
-            metadata={"campaign": "welcome"}
+            metadata={"campaign": "welcome"},
         )
 
         # Test properties
@@ -176,7 +176,7 @@ class TestApplicationDTOs:
             email="test@example.com",
             phone_number="+1234567890",
             telegram_id="tg123",
-            preferences={"lang": "en"}
+            preferences={"lang": "en"},
         )
 
         assert dto.email == "test@example.com"
@@ -192,7 +192,7 @@ class TestApplicationDTOs:
         assert minimal_dto.preferences == {}
 
         # Test dict conversion if available
-        if hasattr(dto, 'dict'):
+        if hasattr(dto, "dict"):
             dto_dict = dto.dict()
             assert dto_dict["email"] == "test@example.com"
 
@@ -207,7 +207,7 @@ class TestApplicationDTOs:
             message_variables={"name": "John"},
             channels=["email", "sms"],
             priority="HIGH",
-            metadata={"campaign": "test"}
+            metadata={"campaign": "test"},
         )
 
         assert dto.user_id == "user123"
@@ -219,8 +219,7 @@ class TestApplicationDTOs:
 
         # Minimal DTO
         minimal_dto = SendNotificationDTO(
-            user_id="user456",
-            message_template="Simple message"
+            user_id="user456", message_template="Simple message"
         )
 
         assert minimal_dto.user_id == "user456"
@@ -288,10 +287,10 @@ class TestMessageValueObject:
         """Test Message rendering."""
         from app.domain.value_objects.notification import Message
 
-        msg = Message("Hello {name}! Welcome to {service}.", {
-            "name": "John",
-            "service": "TestApp"
-        })
+        msg = Message(
+            "Hello {name}! Welcome to {service}.",
+            {"name": "John", "service": "TestApp"},
+        )
 
         rendered = msg.render()
         assert rendered == "Hello John! Welcome to TestApp."
@@ -383,7 +382,7 @@ class TestBasicInfrastructure:
             phone_number=None,
             telegram_id=None,
             preferences={},
-            is_active=True
+            is_active=True,
         )
 
         # Save user
@@ -425,7 +424,7 @@ class TestBasicInfrastructure:
             user_id=user_id,
             message=message,
             channels=["email"],
-            priority="MEDIUM"
+            priority="MEDIUM",
         )
 
         # Save notification
@@ -471,7 +470,7 @@ def test_basic_functionality():
         phone_number=None,
         telegram_id=None,
         preferences={"test": True},
-        is_active=True
+        is_active=True,
     )
 
     # Basic operations should work
@@ -493,7 +492,7 @@ def test_basic_functionality():
         user_id=user_id,
         message=message,
         channels=["email"],
-        priority="LOW"
+        priority="LOW",
     )
 
     assert notification.status == "pending"

@@ -1,6 +1,7 @@
 """
 Delivery entity and related domain objects.
 """
+
 from datetime import UTC, datetime
 
 from ..value_objects.delivery import (
@@ -25,7 +26,7 @@ class DeliveryAttempt:
         provider: str,
         channel: NotificationType,
         attempted_at: datetime,
-        result: DeliveryResult
+        result: DeliveryResult,
     ) -> None:
         self.provider = provider
         self.channel = channel
@@ -42,7 +43,7 @@ class Delivery(Entity):
         notification: Notification,
         user: User,
         strategy: DeliveryStrategy = DeliveryStrategy.FIRST_SUCCESS,
-        retry_policy: RetryPolicy | None = None
+        retry_policy: RetryPolicy | None = None,
     ) -> None:
         super().__init__(delivery_id)
         self._notification = notification
@@ -101,18 +102,19 @@ class Delivery(Entity):
             return
 
         if not self._notification.is_ready_to_send():
-            self._fail_with_error("NOTIFICATION_NOT_READY", "Notification is not ready to send")
+            self._fail_with_error(
+                "NOTIFICATION_NOT_READY", "Notification is not ready to send"
+            )
             return
 
-        self._status = DeliveryStatus.SENT  # Changed from SENDING to SENT as we don't have intermediate state
+        self._status = (
+            DeliveryStatus.SENT
+        )  # Changed from SENDING to SENT as we don't have intermediate state
         self._started_at = datetime.now(UTC)
         self._mark_updated()
 
     def add_attempt(
-        self,
-        provider: str,
-        channel: NotificationType,
-        result: DeliveryResult
+        self, provider: str, channel: NotificationType, result: DeliveryResult
     ) -> None:
         """Add a delivery attempt."""
         if self._status not in [DeliveryStatus.SENT, DeliveryStatus.RETRYING]:
@@ -122,7 +124,7 @@ class Delivery(Entity):
             provider=provider,
             channel=channel,
             attempted_at=datetime.now(UTC),
-            result=result
+            result=result,
         )
         self._attempts.append(attempt)
 
@@ -178,10 +180,7 @@ class Delivery(Entity):
         """Mark delivery as failed with error."""
         error = DeliveryError(code=code, message=message)
         result = DeliveryResult(
-            success=False,
-            provider="system",
-            message=message,
-            error=error
+            success=False, provider="system", message=message, error=error
         )
         self._fail_with_result(result)
 

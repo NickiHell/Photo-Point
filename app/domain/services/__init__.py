@@ -1,10 +1,9 @@
 """
 Domain services for notification business logic.
 """
-from abc import ABC, abstractmethod
-from typing import List, Set
 
-from ..entities.notification import Notification
+from abc import ABC, abstractmethod
+
 from ..entities.user import User
 from ..value_objects.delivery import DeliveryResult
 from ..value_objects.notification import NotificationType, RenderedMessage
@@ -32,7 +31,11 @@ class NotificationChannelService:
         user_preferences = user.preferences
 
         # Default priority order
-        default_order = [NotificationType.EMAIL, NotificationType.TELEGRAM, NotificationType.SMS]
+        default_order = [
+            NotificationType.EMAIL,
+            NotificationType.TELEGRAM,
+            NotificationType.SMS,
+        ]
 
         # Filter by available channels and user preferences
         preferred_channels = []
@@ -101,13 +104,17 @@ class NotificationDeliveryService:
 
         providers = []
         for provider in self._providers:
-            if (provider.get_channel_type() in available_channels and
-                provider.can_handle_user(user)):
+            if (
+                provider.get_channel_type() in available_channels
+                and provider.can_handle_user(user)
+            ):
                 providers.append(provider)
 
         return providers
 
-    def get_ordered_providers_for_user(self, user: User) -> list[NotificationProviderInterface]:
+    def get_ordered_providers_for_user(
+        self, user: User
+    ) -> list[NotificationProviderInterface]:
         """Get providers for user ordered by preference."""
         preferred_channels = self._channel_service.get_preferred_channels_for_user(user)
         available_providers = self.get_providers_for_user(user)
@@ -117,8 +124,10 @@ class NotificationDeliveryService:
         # Order providers by channel preference
         for channel in preferred_channels:
             for provider in available_providers:
-                if (provider.get_channel_type() == channel and
-                    provider not in ordered_providers):
+                if (
+                    provider.get_channel_type() == channel
+                    and provider not in ordered_providers
+                ):
                     ordered_providers.append(provider)
 
         return ordered_providers

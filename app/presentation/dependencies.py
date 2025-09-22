@@ -1,10 +1,17 @@
 """
 Dependency injection container and dependency providers.
 """
+from typing import Any
 
 try:
     from dependency_injector import containers, providers
 
+    from ..application.use_cases.celery_notification_sending import (
+        GetTaskStatusUseCase,
+        RetryFailedNotificationUseCase,
+        SendBulkNotificationAsyncUseCase,
+        SendNotificationAsyncUseCase,
+    )
     from ..application.use_cases.notification_sending import (
         SendBulkNotificationUseCase,
         SendNotificationUseCase,
@@ -24,7 +31,6 @@ try:
         InMemoryUserRepository,
     )
 
-
     class Container(containers.DeclarativeContainer):
         """Dependency injection container."""
 
@@ -38,41 +44,29 @@ try:
 
         # Notification providers
         email_provider = providers.Singleton(
-            EmailNotificationAdapter,
-            config=config.provided.email
+            EmailNotificationAdapter, config=config.provided.email
         )
         sms_provider = providers.Singleton(
-            SMSNotificationAdapter,
-            config=config.provided.sms
+            SMSNotificationAdapter, config=config.provided.sms
         )
         telegram_provider = providers.Singleton(
-            TelegramNotificationAdapter,
-            config=config.provided.telegram
+            TelegramNotificationAdapter, config=config.provided.telegram
         )
 
         # Provider registry
         notification_providers = providers.Dict(
-            email=email_provider,
-            sms=sms_provider,
-            telegram=telegram_provider
+            email=email_provider, sms=sms_provider, telegram=telegram_provider
         )
 
         # Use cases - User Management
         create_user_use_case = providers.Factory(
-            CreateUserUseCase,
-            user_repository=user_repository
+            CreateUserUseCase, user_repository=user_repository
         )
         get_user_use_case = providers.Factory(
-            GetUserUseCase,
-            user_repository=user_repository
+            GetUserUseCase, user_repository=user_repository
         )
         update_user_use_case = providers.Factory(
-            UpdateUserUseCase,
-            user_repository=user_repository
-        )
-        delete_user_use_case = providers.Factory(
-            DeleteUserUseCase,
-            user_repository=user_repository
+            UpdateUserUseCase, user_repository=user_repository
         )
 
         # Use cases - Notification Sending
@@ -81,60 +75,86 @@ try:
             user_repository=user_repository,
             notification_repository=notification_repository,
             delivery_repository=delivery_repository,
-            notification_providers=notification_providers
+            notification_providers=notification_providers,
         )
         send_bulk_notification_use_case = providers.Factory(
             SendBulkNotificationUseCase,
             user_repository=user_repository,
             notification_repository=notification_repository,
             delivery_repository=delivery_repository,
-            notification_providers=notification_providers
+            notification_providers=notification_providers,
         )
-        get_notification_status_use_case = providers.Factory(
-            GetNotificationStatusUseCase,
-            notification_repository=notification_repository,
-            delivery_repository=delivery_repository
+        # Use cases - Celery-based Async Notification Sending
+        send_notification_async_use_case = providers.Factory(
+            SendNotificationAsyncUseCase, user_repository=user_repository
+        )
+        send_bulk_notification_async_use_case = providers.Factory(
+            SendBulkNotificationAsyncUseCase, user_repository=user_repository
+        )
+        get_task_status_use_case = providers.Factory(GetTaskStatusUseCase)
+        retry_failed_notification_use_case = providers.Factory(
+            RetryFailedNotificationUseCase
         )
 
+        get_notification_status_use_case: providers.Factory = providers.Factory(
+            # TODO: Implement GetNotificationStatusUseCase
+            # GetNotificationStatusUseCase,
+            # notification_repository=notification_repository,
+            # delivery_repository=delivery_repository
+        )
 
     # Global container instance
     container = Container()
 
-
-    def get_container() -> Container:
+    def get_container() -> Any:
         """Get the global container instance."""
         return container
 
-
     # Dependency providers for FastAPI
+    def get_create_user_use_case():
+        """Get create user use case."""
+        return container.create_user_use_case()
+
+    def get_get_user_use_case():
+        """Get get user use case."""
+        return container.get_user_use_case()
+
+    def get_update_user_use_case():
+        """Get update user use case."""
+        return container.update_user_use_case()
+
     def get_user_use_cases():
         """Get user management use cases."""
         return {
-            'create': container.create_user_use_case(),
-            'get': container.get_user_use_case(),
-            'update': container.update_user_use_case(),
-            'delete': container.delete_user_use_case()
+            "create": container.create_user_use_case(),
+            "get": container.get_user_use_case(),
+            "update": container.update_user_use_case(),
         }
-
 
     def get_notification_use_cases():
         """Get notification use cases."""
         return {
-            'send': container.send_notification_use_case(),
-            'send_bulk': container.send_bulk_notification_use_case(),
-            'get_status': container.get_notification_status_use_case()
+            "send": container.send_notification_use_case(),
+            "send_bulk": container.send_bulk_notification_use_case(),
+            "get_status": container.get_notification_status_use_case(),
         }
 
+    def get_notification_async_use_cases():
+        """Get async notification use cases (Celery-based)."""
+        return {
+            "send_async": container.send_notification_async_use_case(),
+            "send_bulk_async": container.send_bulk_notification_async_use_case(),
+            "get_task_status": container.get_task_status_use_case(),
+            "retry_failed": container.retry_failed_notification_use_case(),
+        }
 
     def get_user_repository():
         """Get user repository."""
         return container.user_repository()
 
-
     def get_notification_repository():
         """Get notification repository."""
         return container.notification_repository()
-
 
     def get_delivery_repository():
         """Get delivery repository."""
@@ -149,13 +169,16 @@ except ImportError:
         def shutdown_resources(self):
             pass
 
-    def get_container():
+    def get_container() -> Any:
         return MockContainer()
 
     def get_user_use_cases():
         return {}
 
     def get_notification_use_cases():
+        return {}
+
+    def get_notification_async_use_cases():
         return {}
 
     def get_user_repository():

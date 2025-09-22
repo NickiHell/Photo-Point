@@ -1,6 +1,7 @@
 """
 Comprehensive tests for Clean Architecture implementation to improve coverage.
 """
+
 from datetime import datetime
 from unittest.mock import Mock
 
@@ -30,7 +31,7 @@ class TestDomainLayer:
             phone_number="+1234567890",
             telegram_id="123456789",
             preferences={"lang": "en"},
-            is_active=True
+            is_active=True,
         )
 
         assert user.email == "test@example.com"
@@ -61,7 +62,7 @@ class TestDomainLayer:
             recipient_id="user1",
             message_template="Hello {name}!",
             channels=["email", "sms"],
-            priority="HIGH"
+            priority="HIGH",
         )
 
         assert notification.id == "notif1"
@@ -91,7 +92,7 @@ class TestApplicationLayer:
             email="test@example.com",
             phone_number="+1234567890",
             telegram_id="123456789",
-            preferences={"lang": "en"}
+            preferences={"lang": "en"},
         )
 
         assert dto.email == "test@example.com"
@@ -112,7 +113,7 @@ class TestApplicationLayer:
             message_template="Hello {name}!",
             message_variables={"name": "John"},
             channels=["email"],
-            priority="HIGH"
+            priority="HIGH",
         )
 
         assert dto.recipient_id == "user1"
@@ -122,10 +123,7 @@ class TestApplicationLayer:
         assert dto.priority == "HIGH"
 
         # Test with defaults
-        dto2 = SendNotificationDTO(
-            recipient_id="user1",
-            message_template="Hello!"
-        )
+        dto2 = SendNotificationDTO(recipient_id="user1", message_template="Hello!")
         assert dto2.message_variables == {}
         assert dto2.channels == ["email"]
         assert dto2.priority == "MEDIUM"
@@ -141,10 +139,7 @@ class TestApplicationLayer:
 
         # Test CreateUserUseCase
         use_case = CreateUserUseCase(mock_repo)
-        dto = CreateUserDTO(
-            email="test@example.com",
-            preferences={"lang": "en"}
-        )
+        dto = CreateUserDTO(email="test@example.com", preferences={"lang": "en"})
 
         result = use_case.execute(dto)
 
@@ -168,7 +163,7 @@ class TestApplicationLayer:
         notif_dto = SendNotificationDTO(
             recipient_id="user123",
             message_template="Welcome {name}!",
-            message_variables={"name": "John"}
+            message_variables={"name": "John"},
         )
 
         notif_result = notif_use_case.execute(notif_dto)
@@ -237,7 +232,7 @@ class TestIntegrationScenarios:
                     phone_number=user_data.get("phone_number"),
                     telegram_id=user_data.get("telegram_id"),
                     preferences=user_data.get("preferences", {}),
-                    is_active=user_data.get("is_active", True)
+                    is_active=user_data.get("is_active", True),
                 )
                 self.users[user_id] = user
                 return user_id
@@ -252,7 +247,7 @@ class TestIntegrationScenarios:
         dto = CreateUserDTO(
             email="integration@example.com",
             phone_number="+1234567890",
-            preferences={"notifications": True, "lang": "en"}
+            preferences={"notifications": True, "lang": "en"},
         )
 
         result = use_case.execute(dto)
@@ -291,7 +286,7 @@ class TestIntegrationScenarios:
                     "channels": notification_data["channels"],
                     "priority": notification_data["priority"],
                     "status": "SENT",  # Simulate successful sending
-                    "sent_at": datetime.now()
+                    "sent_at": datetime.now(),
                 }
                 return notif_id
 
@@ -304,7 +299,7 @@ class TestIntegrationScenarios:
             message_template="Welcome to {service}! Your account {status}.",
             message_variables={"service": "NotificationApp", "status": "is ready"},
             channels=["email", "sms"],
-            priority="HIGH"
+            priority="HIGH",
         )
 
         result = use_case.execute(dto)
@@ -334,10 +329,7 @@ class TestEdgeCases:
         assert user_dto.preferences == {}
 
         # Test SendNotificationDTO with required fields only
-        notif_dto = SendNotificationDTO(
-            recipient_id="user1",
-            message_template="Hello!"
-        )
+        notif_dto = SendNotificationDTO(recipient_id="user1", message_template="Hello!")
         assert notif_dto.message_variables == {}
         assert notif_dto.channels == ["email"]
         assert notif_dto.retry_policy == {}

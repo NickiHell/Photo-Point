@@ -35,7 +35,7 @@ class TestUsersRoutesDirectly:
             telegram_id="tg123",
             is_active=True,
             preferences={"lang": "en"},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -44,7 +44,7 @@ class TestUsersRoutesDirectly:
             email="test@example.com",
             phone_number="+1234567890",
             telegram_id="tg123",
-            preferences={"lang": "en"}
+            preferences={"lang": "en"},
         )
 
         # Call the function
@@ -98,7 +98,7 @@ class TestUsersRoutesDirectly:
             telegram_id="tg123",
             is_active=True,
             preferences={"lang": "en"},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -151,7 +151,7 @@ class TestUsersRoutesDirectly:
             telegram_id="tg456",
             is_active=False,
             preferences={"lang": "es"},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -161,7 +161,7 @@ class TestUsersRoutesDirectly:
             phone_number="+0987654321",
             telegram_id="tg456",
             is_active=False,
-            preferences={"lang": "es"}
+            preferences={"lang": "es"},
         )
 
         # Call the function
@@ -219,7 +219,7 @@ class TestUserRouteModels:
             email="test@example.com",
             phone_number="+1234567890",
             telegram_id="tg123",
-            preferences={"lang": "en"}
+            preferences={"lang": "en"},
         )
         assert request.email == "test@example.com"
         assert request.phone_number == "+1234567890"
@@ -241,10 +241,7 @@ class TestUserRouteModels:
             pytest.skip("Users route not available")
 
         # Test with some fields
-        request = UpdateUserRequest(
-            email="updated@example.com",
-            is_active=False
-        )
+        request = UpdateUserRequest(email="updated@example.com", is_active=False)
         assert request.email == "updated@example.com"
         assert request.is_active is False
         assert request.phone_number is None
@@ -266,7 +263,7 @@ class TestUserRouteModels:
             telegram_id="tg123",
             is_active=True,
             preferences={"lang": "en"},
-            created_at="2024-01-01T12:00:00"
+            created_at="2024-01-01T12:00:00",
         )
         assert response.id == "user-123"
         assert response.email == "test@example.com"
@@ -281,6 +278,7 @@ class TestUsersRouteImports:
         """Test that router can be imported."""
         try:
             from app.presentation.api.routes.users import router
+
             # Check if it's a real router or mock
             assert router is not None
         except ImportError:
@@ -295,6 +293,7 @@ class TestUsersRouteImports:
                 get_user,
                 update_user,
             )
+
             # All functions should be callable
             assert callable(create_user)
             assert callable(get_user)
@@ -311,6 +310,7 @@ class TestUsersRouteImports:
                 UpdateUserRequest,
                 UserResponse,
             )
+
             # All should be classes
             assert isinstance(CreateUserRequest, type)
             assert isinstance(UpdateUserRequest, type)
@@ -322,12 +322,15 @@ class TestUsersRouteImports:
 class TestUsersRouteErrorHandling:
     """Test error handling in users routes."""
 
-    @pytest.mark.parametrize("error_type,expected_status", [
-        (ValueError("Invalid input"), 400),
-        (Exception("Database error"), 500),
-        (KeyError("Missing field"), 500),
-        (TypeError("Type mismatch"), 500),
-    ])
+    @pytest.mark.parametrize(
+        "error_type,expected_status",
+        [
+            (ValueError("Invalid input"), 400),
+            (Exception("Database error"), 500),
+            (KeyError("Missing field"), 500),
+            (TypeError("Type mismatch"), 500),
+        ],
+    )
     @pytest.mark.asyncio
     async def test_create_user_error_handling(self, error_type, expected_status):
         """Test create_user error handling."""
@@ -349,10 +352,13 @@ class TestUsersRouteErrorHandling:
 
         assert exc_info.value.status_code == expected_status
 
-    @pytest.mark.parametrize("error_type,expected_status", [
-        (ValueError("Invalid user ID"), 400),
-        (Exception("Database error"), 500),
-    ])
+    @pytest.mark.parametrize(
+        "error_type,expected_status",
+        [
+            (ValueError("Invalid user ID"), 400),
+            (Exception("Database error"), 500),
+        ],
+    )
     @pytest.mark.asyncio
     async def test_get_user_error_handling(self, error_type, expected_status):
         """Test get_user error handling."""

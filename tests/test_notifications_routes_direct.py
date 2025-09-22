@@ -40,7 +40,7 @@ class TestNotificationsRoutesDirectly:
             priority="HIGH",
             scheduled_at=datetime(2024, 1, 1, 12, 0, 0),
             created_at=datetime(2024, 1, 1, 11, 0, 0),
-            status="PENDING"
+            status="PENDING",
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -51,7 +51,7 @@ class TestNotificationsRoutesDirectly:
             message_variables={"name": "John"},
             channels=["email", "sms"],
             priority="HIGH",
-            scheduled_at="2024-01-01T12:00:00Z"
+            scheduled_at="2024-01-01T12:00:00Z",
         )
 
         # Call the function
@@ -88,7 +88,7 @@ class TestNotificationsRoutesDirectly:
             priority="MEDIUM",
             scheduled_at=datetime(2024, 1, 1, 12, 0, 0),
             created_at=datetime(2024, 1, 1, 12, 0, 0),
-            status="PENDING"
+            status="PENDING",
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -96,7 +96,7 @@ class TestNotificationsRoutesDirectly:
         request = SendNotificationRequest(
             recipient_id="user-124",
             message_template="Simple message",
-            channels=["email"]
+            channels=["email"],
         )
 
         # Call the function
@@ -127,7 +127,7 @@ class TestNotificationsRoutesDirectly:
         request = SendNotificationRequest(
             recipient_id="invalid-user",
             message_template="Test message",
-            channels=["email"]
+            channels=["email"],
         )
 
         # Call the function and expect HTTPException
@@ -161,15 +161,16 @@ class TestNotificationsRoutesDirectly:
                 priority="MEDIUM",
                 scheduled_at=datetime(2024, 1, 1, 12, 0, 0),
                 created_at=datetime(2024, 1, 1, 12, 0, 0),
-                status="PENDING"
-            ) for i in range(1, 4)
+                status="PENDING",
+            )
+            for i in range(1, 4)
         ]
 
         mock_response = BulkNotificationResponseDTO(
             notifications=notifications,
             total_count=3,
             successful_count=3,
-            failed_count=0
+            failed_count=0,
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -177,7 +178,7 @@ class TestNotificationsRoutesDirectly:
         request = SendBulkNotificationRequest(
             recipient_ids=["user-1", "user-2", "user-3"],
             message_template="Bulk message",
-            channels=["email"]
+            channels=["email"],
         )
 
         # Call the function
@@ -214,9 +215,9 @@ class TestNotificationsRoutesDirectly:
                     "channel": "email",
                     "status": "DELIVERED",
                     "delivered_at": "2024-01-01T12:30:00",
-                    "provider_response": {"message_id": "email-123"}
+                    "provider_response": {"message_id": "email-123"},
                 }
-            ]
+            ],
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -274,7 +275,7 @@ class TestNotificationRouteModels:
             priority="HIGH",
             scheduled_at="2024-01-01T12:00:00Z",
             retry_policy={"max_attempts": 3},
-            metadata={"campaign": "welcome"}
+            metadata={"campaign": "welcome"},
         )
         assert request.recipient_id == "user-123"
         assert request.message_template == "Hello {name}"
@@ -285,7 +286,7 @@ class TestNotificationRouteModels:
         request_minimal = SendNotificationRequest(
             recipient_id="user-124",
             message_template="Simple message",
-            channels=["email"]
+            channels=["email"],
         )
         assert request_minimal.priority == "MEDIUM"  # Default value
         assert request_minimal.message_variables == {}
@@ -304,7 +305,7 @@ class TestNotificationRouteModels:
         request = SendBulkNotificationRequest(
             recipient_ids=["user-1", "user-2", "user-3"],
             message_template="Bulk message",
-            channels=["email"]
+            channels=["email"],
         )
         assert len(request.recipient_ids) == 3
         assert request.message_template == "Bulk message"
@@ -326,7 +327,7 @@ class TestNotificationRouteModels:
             priority="HIGH",
             scheduled_at="2024-01-01T12:00:00",
             created_at="2024-01-01T11:00:00",
-            status="PENDING"
+            status="PENDING",
         )
         assert response.id == "notif-123"
         assert response.priority == "HIGH"
@@ -340,6 +341,7 @@ class TestNotificationsRouteImports:
         """Test that router can be imported."""
         try:
             from app.presentation.api.routes.notifications import router
+
             assert router is not None
         except ImportError:
             pytest.skip("Notifications route not available")
@@ -352,6 +354,7 @@ class TestNotificationsRouteImports:
                 send_bulk_notification,
                 send_notification,
             )
+
             # All functions should be callable
             assert callable(send_notification)
             assert callable(send_bulk_notification)
@@ -367,6 +370,7 @@ class TestNotificationsRouteImports:
                 SendBulkNotificationRequest,
                 SendNotificationRequest,
             )
+
             # All should be classes
             assert isinstance(SendNotificationRequest, type)
             assert isinstance(SendBulkNotificationRequest, type)
@@ -378,12 +382,15 @@ class TestNotificationsRouteImports:
 class TestNotificationsRouteErrorHandling:
     """Test error handling in notifications routes."""
 
-    @pytest.mark.parametrize("error_type,expected_status", [
-        (ValueError("Invalid input"), 400),
-        (Exception("Database error"), 500),
-        (KeyError("Missing field"), 500),
-        (TypeError("Type mismatch"), 500),
-    ])
+    @pytest.mark.parametrize(
+        "error_type,expected_status",
+        [
+            (ValueError("Invalid input"), 400),
+            (Exception("Database error"), 500),
+            (KeyError("Missing field"), 500),
+            (TypeError("Type mismatch"), 500),
+        ],
+    )
     @pytest.mark.asyncio
     async def test_send_notification_error_handling(self, error_type, expected_status):
         """Test send_notification error handling."""
@@ -403,9 +410,7 @@ class TestNotificationsRouteErrorHandling:
 
         # Create request
         request = SendNotificationRequest(
-            recipient_id="user-123",
-            message_template="Test message",
-            channels=["email"]
+            recipient_id="user-123", message_template="Test message", channels=["email"]
         )
 
         # Call the function and expect HTTPException
@@ -414,11 +419,14 @@ class TestNotificationsRouteErrorHandling:
 
         assert exc_info.value.status_code == expected_status
 
-    @pytest.mark.parametrize("datetime_string", [
-        "2024-01-01T12:00:00Z",
-        "2024-01-01T12:00:00+00:00",
-        "2024-12-31T23:59:59Z",
-    ])
+    @pytest.mark.parametrize(
+        "datetime_string",
+        [
+            "2024-01-01T12:00:00Z",
+            "2024-01-01T12:00:00+00:00",
+            "2024-12-31T23:59:59Z",
+        ],
+    )
     @pytest.mark.asyncio
     async def test_datetime_parsing(self, datetime_string):
         """Test datetime parsing in send_notification."""
@@ -440,7 +448,7 @@ class TestNotificationsRouteErrorHandling:
             priority="MEDIUM",
             scheduled_at=datetime(2024, 1, 1, 12, 0, 0),
             created_at=datetime(2024, 1, 1, 12, 0, 0),
-            status="PENDING"
+            status="PENDING",
         )
         mock_use_case.execute.return_value = mock_response
 
@@ -449,7 +457,7 @@ class TestNotificationsRouteErrorHandling:
             recipient_id="user-123",
             message_template="Test message",
             channels=["email"],
-            scheduled_at=datetime_string
+            scheduled_at=datetime_string,
         )
 
         # Should not raise exception
@@ -485,7 +493,7 @@ class TestNotificationsAPIIntegration:
             priority="MEDIUM",
             scheduled_at=datetime(2024, 1, 1, 12, 0, 0),
             created_at=datetime(2024, 1, 1, 12, 0, 0),
-            status="PENDING"
+            status="PENDING",
         )
         send_mock.execute.return_value = send_response
 
@@ -498,15 +506,13 @@ class TestNotificationsAPIIntegration:
             last_attempt_at=datetime(2024, 1, 1, 12, 30, 0),
             error_message=None,
             delivered_at=datetime(2024, 1, 1, 12, 30, 0),
-            deliveries=[]
+            deliveries=[],
         )
         status_mock.execute.return_value = status_response
 
         # Test SEND
         request = SendNotificationRequest(
-            recipient_id="user-flow",
-            message_template="Flow test",
-            channels=["email"]
+            recipient_id="user-flow", message_template="Flow test", channels=["email"]
         )
         send_result = await send_notification(request, send_mock)
         assert send_result.status == "PENDING"

@@ -16,7 +16,7 @@ class User(Entity):
         email: Email | None = None,
         phone: PhoneNumber | None = None,
         telegram_chat_id: TelegramChatId | None = None,
-        is_active: bool = True
+        is_active: bool = True,
     ) -> None:
         super().__init__(user_id)
         self._name = name

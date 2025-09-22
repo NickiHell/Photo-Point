@@ -1,6 +1,7 @@
 """
 Comprehensive tests for all Repository implementations to maximize coverage.
 """
+
 import asyncio
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock
@@ -17,6 +18,7 @@ class TestInMemoryUserRepository:
         from app.infrastructure.repositories.memory_repositories import (
             InMemoryUserRepository,
         )
+
         return InMemoryUserRepository()
 
     @pytest.fixture
@@ -29,7 +31,7 @@ class TestInMemoryUserRepository:
             user_id=UserId("user-123"),
             name=UserName("Test User"),
             email=Email("test@gmail.com"),
-            is_active=True
+            is_active=True,
         )
 
     @pytest.mark.asyncio
@@ -73,19 +75,19 @@ class TestInMemoryUserRepository:
             user_id=UserId("active-1"),
             name=UserName("Active User 1"),
             email=Email("active1@gmail.com"),
-            is_active=True
+            is_active=True,
         )
         active_user2 = User(
             user_id=UserId("active-2"),
             name=UserName("Active User 2"),
             email=Email("active2@gmail.com"),
-            is_active=True
+            is_active=True,
         )
         inactive_user = User(
             user_id=UserId("inactive-1"),
             name=UserName("Inactive User"),
             email=Email("inactive@gmail.com"),
-            is_active=False
+            is_active=False,
         )
 
         # Save all users
@@ -151,6 +153,7 @@ class TestInMemoryNotificationRepository:
         from app.infrastructure.repositories.memory_repositories import (
             InMemoryNotificationRepository,
         )
+
         return InMemoryNotificationRepository()
 
     @pytest.fixture
@@ -166,11 +169,13 @@ class TestInMemoryNotificationRepository:
         return Notification(
             notification_id=NotificationId("notif-123"),
             recipient_id=UserId("user-123"),
-            message_template=MessageTemplate("Test Subject", "Test message content")
+            message_template=MessageTemplate("Test Subject", "Test message content"),
         )
 
     @pytest.mark.asyncio
-    async def test_save_notification_success(self, notification_repo, sample_notification):
+    async def test_save_notification_success(
+        self, notification_repo, sample_notification
+    ):
         """Test successful notification saving."""
         await notification_repo.save(sample_notification)
 
@@ -181,7 +186,9 @@ class TestInMemoryNotificationRepository:
         assert retrieved.recipient_id == sample_notification.recipient_id
 
     @pytest.mark.asyncio
-    async def test_get_by_id_existing_notification(self, notification_repo, sample_notification):
+    async def test_get_by_id_existing_notification(
+        self, notification_repo, sample_notification
+    ):
         """Test getting existing notification by ID."""
         await notification_repo.save(sample_notification)
 
@@ -213,13 +220,13 @@ class TestInMemoryNotificationRepository:
             notification_id=NotificationId("past-notif"),
             recipient_id=UserId("user-1"),
             message_template=MessageTemplate("Past", "Past notification"),
-            scheduled_at=now - timedelta(hours=1)
+            scheduled_at=now - timedelta(hours=1),
         )
         future_notification = Notification(
             notification_id=NotificationId("future-notif"),
             recipient_id=UserId("user-2"),
             message_template=MessageTemplate("Future", "Future notification"),
-            scheduled_at=now + timedelta(hours=1)
+            scheduled_at=now + timedelta(hours=1),
         )
 
         await notification_repo.save(past_notification)
@@ -249,17 +256,17 @@ class TestInMemoryNotificationRepository:
         notif1 = Notification(
             notification_id=NotificationId("notif-1"),
             recipient_id=user1_id,
-            message_template=MessageTemplate("Subject 1", "Message 1")
+            message_template=MessageTemplate("Subject 1", "Message 1"),
         )
         notif2 = Notification(
             notification_id=NotificationId("notif-2"),
             recipient_id=user1_id,
-            message_template=MessageTemplate("Subject 2", "Message 2")
+            message_template=MessageTemplate("Subject 2", "Message 2"),
         )
         notif3 = Notification(
             notification_id=NotificationId("notif-3"),
             recipient_id=user2_id,
-            message_template=MessageTemplate("Subject 3", "Message 3")
+            message_template=MessageTemplate("Subject 3", "Message 3"),
         )
 
         await notification_repo.save(notif1)
@@ -267,7 +274,9 @@ class TestInMemoryNotificationRepository:
         await notification_repo.save(notif3)
 
         # Get notifications for user1
-        user1_notifications = await notification_repo.get_notifications_for_user(user1_id)
+        user1_notifications = await notification_repo.get_notifications_for_user(
+            user1_id
+        )
 
         assert len(user1_notifications) == 2
         notification_ids = [notif.id.value for notif in user1_notifications]
@@ -285,6 +294,7 @@ class TestInMemoryDeliveryRepository:
         from app.infrastructure.repositories.memory_repositories import (
             InMemoryDeliveryRepository,
         )
+
         return InMemoryDeliveryRepository()
 
     @pytest.fixture
@@ -300,7 +310,7 @@ class TestInMemoryDeliveryRepository:
             notification=NotificationId("notif-123"),
             recipient_id=UserId("user-123"),
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
     @pytest.mark.asyncio
@@ -349,21 +359,21 @@ class TestInMemoryDeliveryRepository:
             notification=NotificationId("notif-1"),
             recipient_id=user1_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
         delivery2 = Delivery(
             delivery_id=DeliveryId("delivery-2"),
             notification=NotificationId("notif-2"),
             recipient_id=user1_id,
             channel="sms",
-            provider="twilio"
+            provider="twilio",
         )
         delivery3 = Delivery(
             delivery_id=DeliveryId("delivery-3"),
             notification=NotificationId("notif-3"),
             recipient_id=user2_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         await delivery_repo.save(delivery1)
@@ -387,7 +397,9 @@ class TestInMemoryDeliveryRepository:
         await delivery_repo.save(sample_delivery)
 
         # Get deliveries by PENDING status (default)
-        pending_deliveries = await delivery_repo.get_deliveries_by_status(DeliveryStatus.PENDING)
+        pending_deliveries = await delivery_repo.get_deliveries_by_status(
+            DeliveryStatus.PENDING
+        )
 
         assert len(pending_deliveries) >= 1
         delivery_ids = [delivery.id.value for delivery in pending_deliveries]
@@ -408,6 +420,7 @@ class TestSQLAlchemyRepositories:
         from app.infrastructure.repositories.sqlalchemy_repositories import (
             SQLAlchemyUserRepository,
         )
+
         return SQLAlchemyUserRepository(mock_session)
 
     @pytest.mark.asyncio
@@ -419,7 +432,7 @@ class TestSQLAlchemyRepositories:
         user = User(
             user_id=UserId("user-123"),
             name=UserName("Test User"),
-            email=Email("test@gmail.com")
+            email=Email("test@gmail.com"),
         )
 
         # Mock the session operations
@@ -495,7 +508,7 @@ class TestRepositoryErrorHandling:
             User(
                 user_id=UserId(f"user-{i}"),
                 name=UserName(f"User {i}"),
-                email=Email(f"user{i}@gmail.com")
+                email=Email(f"user{i}@gmail.com"),
             )
             for i in range(10)
         ]
@@ -546,30 +559,48 @@ def test_all_repositories_import():
     assert all([user_repo, notif_repo, delivery_repo])
 
     # SQLAlchemy repos need session, just verify they can be imported
-    assert all([SQLAlchemyUserRepository, SQLAlchemyNotificationRepository, SQLAlchemyDeliveryRepository])
+    assert all(
+        [
+            SQLAlchemyUserRepository,
+            SQLAlchemyNotificationRepository,
+            SQLAlchemyDeliveryRepository,
+        ]
+    )
 
 
-@pytest.mark.parametrize("repo_type,expected_methods", [
-    ("InMemoryUserRepository", ["save", "get_by_id", "get_all_active", "delete"]),
-    ("InMemoryNotificationRepository", ["save", "get_by_id", "get_pending_notifications"]),
-    ("InMemoryDeliveryRepository", ["save", "get_by_id", "get_deliveries_for_user"]),
-])
+@pytest.mark.parametrize(
+    "repo_type,expected_methods",
+    [
+        ("InMemoryUserRepository", ["save", "get_by_id", "get_all_active", "delete"]),
+        (
+            "InMemoryNotificationRepository",
+            ["save", "get_by_id", "get_pending_notifications"],
+        ),
+        (
+            "InMemoryDeliveryRepository",
+            ["save", "get_by_id", "get_deliveries_for_user"],
+        ),
+    ],
+)
 def test_repository_interface_compliance(repo_type, expected_methods):
     """Test that repositories implement expected interface methods."""
     if repo_type == "InMemoryUserRepository":
         from app.infrastructure.repositories.memory_repositories import (
             InMemoryUserRepository,
         )
+
         repo = InMemoryUserRepository()
     elif repo_type == "InMemoryNotificationRepository":
         from app.infrastructure.repositories.memory_repositories import (
             InMemoryNotificationRepository,
         )
+
         repo = InMemoryNotificationRepository()
     elif repo_type == "InMemoryDeliveryRepository":
         from app.infrastructure.repositories.memory_repositories import (
             InMemoryDeliveryRepository,
         )
+
         repo = InMemoryDeliveryRepository()
 
     for method_name in expected_methods:

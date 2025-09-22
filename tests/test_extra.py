@@ -1,6 +1,8 @@
 """
 Additional small tests to push coverage over 25%.
 """
+
+
 def test_simple_addition():
     """Simple test to add coverage."""
     from app.domain.value_objects.delivery import DeliveryId
@@ -19,20 +21,20 @@ def test_simple_addition():
     try:
         same = delivery_id == delivery_id2
         assert isinstance(same, bool)
-    except:
+    except (NotImplementedError, AttributeError):
         pass  # Equality not implemented
 
     # Test repr methods
     try:
         delivery_repr = repr(delivery_id)
         assert isinstance(delivery_repr, str)
-    except:
+    except (NotImplementedError, AttributeError):
         pass
 
     try:
         notif_repr = repr(notif_id)
         assert isinstance(notif_repr, str)
-    except:
+    except (NotImplementedError, AttributeError):
         pass
 
 
@@ -44,9 +46,9 @@ def test_additional_coverage():
     # Test enum string representations
     statuses = []
     for attr_name in dir(DeliveryStatus):
-        if not attr_name.startswith('_'):
+        if not attr_name.startswith("_"):
             attr = getattr(DeliveryStatus, attr_name, None)
-            if hasattr(attr, 'value'):
+            if hasattr(attr, "value"):
                 statuses.append(attr)
 
     for status in statuses:
@@ -56,13 +58,15 @@ def test_additional_coverage():
 
     # Test entity creation with different parameters
     user1 = User(user_id="coverage1", email="coverage1@test.com", is_active=False)
-    user2 = User(user_id="coverage2", email="coverage2@test.com", preferences={"test": "value"})
+    user2 = User(
+        user_id="coverage2", email="coverage2@test.com", preferences={"test": "value"}
+    )
 
     notif1 = Notification(
         notification_id="cov1",
         recipient_id="coverage1",
         message_template="Test {var}",
-        channels=["email"]
+        channels=["email"],
     )
 
     notif2 = Notification(
@@ -70,7 +74,7 @@ def test_additional_coverage():
         recipient_id="coverage2",
         message_template="Test message",
         channels=["sms", "email"],
-        priority="LOW"
+        priority="LOW",
     )
 
     # Basic assertions
@@ -82,23 +86,23 @@ def test_additional_coverage():
     # Try to access different attributes
     for entity in [user1, user2, notif1, notif2]:
         # Try to get ID
-        if hasattr(entity, 'id'):
+        if hasattr(entity, "id"):
             entity_id = entity.id
             assert entity_id is not None
-        elif hasattr(entity, 'user_id'):
+        elif hasattr(entity, "user_id"):
             user_id = entity.user_id
             assert user_id is not None
-        elif hasattr(entity, 'notification_id'):
+        elif hasattr(entity, "notification_id"):
             notif_id = entity.notification_id
             assert notif_id is not None
 
         # Try to get created_at if it exists
-        if hasattr(entity, 'created_at'):
+        if hasattr(entity, "created_at"):
             pass
             # created_at might be None or a datetime
 
         # Try to get updated_at if it exists
-        if hasattr(entity, 'updated_at'):
+        if hasattr(entity, "updated_at"):
             pass
 
 
@@ -117,7 +121,7 @@ def test_more_value_objects():
         assert str_repr == id_val
 
         # Test value property if exists
-        if hasattr(user_id, 'value'):
+        if hasattr(user_id, "value"):
             assert user_id.value == id_val
 
     # Test different PhoneNumber values
@@ -131,5 +135,5 @@ def test_more_value_objects():
         assert str_repr == phone_val
 
         # Test value property if exists
-        if hasattr(phone, 'value'):
+        if hasattr(phone, "value"):
             assert phone.value == phone_val

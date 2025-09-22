@@ -15,10 +15,11 @@ class CreateUserDTO:
     email: str | None = None
     phone_number: str | None = None
     telegram_id: str | None = None
-    preferences: dict[str, Any] = None
+    preferences: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.preferences is None:
+            self.preferences = {}
             self.preferences = {}
 
 
@@ -40,18 +41,22 @@ class SendNotificationDTO:
 
     recipient_id: str
     message_template: str
-    message_variables: dict[str, Any] = None
-    channels: list[str] = None
+    message_variables: dict[str, Any] | None = None
+    channels: list[str] | None = None
     priority: str = "MEDIUM"
     scheduled_at: datetime | None = None
-    retry_policy: dict[str, Any] = None
-    metadata: dict[str, Any] = None
+    retry_policy: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.message_variables is None:
             self.message_variables = {}
         if self.channels is None:
             self.channels = ["email"]
+        if self.retry_policy is None:
+            self.retry_policy = {}
+        if self.metadata is None:
+            self.metadata = {}
         if self.retry_policy is None:
             self.retry_policy = {}
         if self.metadata is None:
@@ -64,14 +69,22 @@ class SendBulkNotificationDTO:
 
     recipient_ids: list[str]
     message_template: str
-    message_variables: dict[str, Any] = None
-    channels: list[str] = None
+    message_variables: dict[str, Any] | None = None
+    channels: list[str] | None = None
     priority: str = "MEDIUM"
     scheduled_at: datetime | None = None
-    retry_policy: dict[str, Any] = None
-    metadata: dict[str, Any] = None
+    retry_policy: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self):
+        if self.message_variables is None:
+            self.message_variables = {}
+        if self.channels is None:
+            self.channels = ["email"]
+        if self.retry_policy is None:
+            self.retry_policy = {}
+        if self.metadata is None:
+            self.metadata = {}
         if self.message_variables is None:
             self.message_variables = {}
         if self.channels is None:
@@ -246,6 +259,53 @@ class OperationResponse:
     def __post_init__(self):
         if self.errors is None:
             self.errors = []
+
+
+@dataclass
+class NotificationTaskResponse:
+    """Response DTO for queued notification task."""
+
+    task_id: str
+    recipient_id: str
+    subject: str
+    status: str
+    queued_at: datetime
+    estimated_start: datetime | None = None
+    priority: str = "normal"
+
+
+@dataclass
+class BulkNotificationTaskResponse:
+    """Response DTO for queued bulk notification task."""
+
+    task_id: str
+    valid_recipients_count: int
+    invalid_recipients_count: int
+    invalid_recipients: list[str]
+    subject: str
+    status: str
+    queued_at: datetime
+    max_concurrent: int = 10
+    estimated_completion: datetime | None = None
+
+
+@dataclass
+class TaskStatusResponse:
+    """Response DTO for Celery task status."""
+
+    task_id: str
+    status: str
+    message: str
+    result: Any = None
+    error: str | None = None
+    progress: dict[str, Any] | None = None
+    created_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+    def __post_init__(self):
+        if self.progress is None:
+            self.progress = {}
 
 
 @dataclass

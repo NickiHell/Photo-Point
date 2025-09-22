@@ -375,9 +375,7 @@ class TestDeliveryValueObjects:
         from app.domain.value_objects.delivery import DeliveryResult
 
         result = DeliveryResult(
-            success=True,
-            provider="email",
-            message="Email sent successfully"
+            success=True, provider="email", message="Email sent successfully"
         )
         assert result.success is True
         assert result.provider == "email"
@@ -397,7 +395,7 @@ class TestDeliveryValueObjects:
             message="SMS delivery failed",
             error=error,
             metadata={"attempt": 1},
-            delivery_time=5.2
+            delivery_time=5.2,
         )
         assert result.success is False
         assert result.provider == "sms"
@@ -453,7 +451,7 @@ class TestValueObjectEdgeCases:
             order_id=12345,
             amount=99.99,
             status="confirmed",
-            delivery_date="2024-12-25"
+            delivery_date="2024-12-25",
         )
         expected = (
             "Hello John Doe! Your order #12345 for $99.99 is confirmed. "

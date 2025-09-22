@@ -1,6 +1,8 @@
 """
 User-related value objects.
 """
+
+import os
 import re
 
 from email_validator import EmailNotValidError, validate_email
@@ -31,8 +33,11 @@ class Email(ValueObject):
 
     def __init__(self, value: str) -> None:
         try:
-            # Validate email using email-validator library
-            validation_result = validate_email(value)
+            # For testing, skip DNS validation if TEST_MODE is set
+            check_deliverability = os.getenv("TEST_MODE") != "true"
+            validation_result = validate_email(
+                value, check_deliverability=check_deliverability
+            )
             self._value = validation_result.email
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email address: {value}") from e
@@ -50,18 +55,18 @@ class PhoneNumber(ValueObject):
 
     def __init__(self, value: str) -> None:
         # Basic phone number validation and normalization
-        cleaned = re.sub(r'[^\d+]', '', value)
+        cleaned = re.sub(r"[^\d+]", "", value)
 
         if not cleaned:
             raise ValueError("Phone number cannot be empty")
 
         # Must start with + and contain at least 10 digits
-        if not cleaned.startswith('+'):
+        if not cleaned.startswith("+"):
             # Try to add country code for Russian numbers
-            if cleaned.startswith('8'):
-                cleaned = '+7' + cleaned[1:]
-            elif cleaned.startswith('7'):
-                cleaned = '+' + cleaned
+            if cleaned.startswith("8"):
+                cleaned = "+7" + cleaned[1:]
+            elif cleaned.startswith("7"):
+                cleaned = "+" + cleaned
             else:
                 raise ValueError("Phone number must start with country code (+)")
 
@@ -85,17 +90,25 @@ class PhoneNumber(ValueObject):
 class TelegramChatId(ValueObject):
     """Telegram chat ID value object."""
 
-    def __init__(self, value: str) -> None:
-        if not value or not value.strip():
+    def __init__(self, value: str | int) -> None:
+        if value is None:
+            raise ValueError("Telegram chat ID cannot be empty")
+
+        # Convert to string for uniform handling
+        str_value = str(value)
+
+        if not str_value or not str_value.strip():
             raise ValueError("Telegram chat ID cannot be empty")
 
         # Chat ID should be numeric (can be negative for groups)
         try:
-            int(value)
+            int_value = int(str_value)
+            if int_value == 0:
+                raise ValueError("Telegram chat ID cannot be 0")
         except ValueError:
             raise ValueError("Telegram chat ID must be numeric")
 
-        self._value = value.strip()
+        self._value = str_value.strip()
 
     @property
     def value(self) -> str:

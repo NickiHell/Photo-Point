@@ -1,7 +1,9 @@
 """
 User management use cases.
 """
+
 import uuid
+
 import backoff
 
 from ...domain.entities.user import User
@@ -26,7 +28,7 @@ class CreateUserUseCase:
         backoff.expo,
         (ConnectionError, TimeoutError, Exception),
         max_tries=3,
-        max_time=15
+        max_time=15,
     )
     async def execute(self, request: CreateUserRequest) -> OperationResponse:
         """Execute the create user use case."""
@@ -54,12 +56,13 @@ class CreateUserUseCase:
                 email=email,
                 phone=phone,
                 telegram_chat_id=telegram_chat_id,
-                is_active=True
+                is_active=True,
             )
 
             # Add preferences
-            for preference in request.preferences:
-                user.add_preference(preference)
+            if request.preferences:
+                for preference in request.preferences:
+                    user.add_preference(preference)
 
             # Save user
             await self._user_repository.save(user)
@@ -70,31 +73,27 @@ class CreateUserUseCase:
                 name=user.name.value,
                 email=user.email.value if user.email else None,
                 phone=user.phone.value if user.phone else None,
-                telegram_chat_id=user.telegram_chat_id.value if user.telegram_chat_id else None,
+                telegram_chat_id=user.telegram_chat_id.value
+                if user.telegram_chat_id
+                else None,
                 is_active=user.is_active,
                 preferences=list(user.preferences),
                 available_channels=list(user.get_available_channels()),
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
             )
 
             return OperationResponse(
-                success=True,
-                message="User created successfully",
-                data=response_data
+                success=True, message="User created successfully", data=response_data
             )
 
         except ValueError as e:
             return OperationResponse(
-                success=False,
-                message="Invalid input data",
-                errors=[str(e)]
+                success=False, message="Invalid input data", errors=[str(e)]
             )
         except Exception as e:
             return OperationResponse(
-                success=False,
-                message="Failed to create user",
-                errors=[str(e)]
+                success=False, message="Failed to create user", errors=[str(e)]
             )
 
 
@@ -105,10 +104,7 @@ class GetUserUseCase:
         self._user_repository = user_repository
 
     @backoff.on_exception(
-        backoff.expo,
-        (ConnectionError, TimeoutError),
-        max_tries=2,
-        max_time=10
+        backoff.expo, (ConnectionError, TimeoutError), max_tries=2, max_time=10
     )
     async def execute(self, user_id: str) -> OperationResponse:
         """Execute the get user use case."""
@@ -120,7 +116,7 @@ class GetUserUseCase:
                 return OperationResponse(
                     success=False,
                     message="User not found",
-                    errors=["User with given ID does not exist"]
+                    errors=["User with given ID does not exist"],
                 )
 
             response_data = UserResponse(
@@ -128,31 +124,27 @@ class GetUserUseCase:
                 name=user.name.value,
                 email=user.email.value if user.email else None,
                 phone=user.phone.value if user.phone else None,
-                telegram_chat_id=user.telegram_chat_id.value if user.telegram_chat_id else None,
+                telegram_chat_id=user.telegram_chat_id.value
+                if user.telegram_chat_id
+                else None,
                 is_active=user.is_active,
                 preferences=list(user.preferences),
                 available_channels=list(user.get_available_channels()),
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
             )
 
             return OperationResponse(
-                success=True,
-                message="User retrieved successfully",
-                data=response_data
+                success=True, message="User retrieved successfully", data=response_data
             )
 
         except ValueError as e:
             return OperationResponse(
-                success=False,
-                message="Invalid user ID",
-                errors=[str(e)]
+                success=False, message="Invalid user ID", errors=[str(e)]
             )
         except Exception as e:
             return OperationResponse(
-                success=False,
-                message="Failed to retrieve user",
-                errors=[str(e)]
+                success=False, message="Failed to retrieve user", errors=[str(e)]
             )
 
 
@@ -166,9 +158,11 @@ class UpdateUserUseCase:
         backoff.expo,
         (ConnectionError, TimeoutError, Exception),
         max_tries=3,
-        max_time=20
+        max_time=20,
     )
-    async def execute(self, user_id: str, request: UpdateUserRequest) -> OperationResponse:
+    async def execute(
+        self, user_id: str, request: UpdateUserRequest
+    ) -> OperationResponse:
         """Execute the update user use case."""
         try:
             user_id_vo = UserId(user_id)
@@ -178,7 +172,7 @@ class UpdateUserUseCase:
                 return OperationResponse(
                     success=False,
                     message="User not found",
-                    errors=["User with given ID does not exist"]
+                    errors=["User with given ID does not exist"],
                 )
 
             # Update fields if provided
@@ -193,7 +187,9 @@ class UpdateUserUseCase:
 
             if request.telegram_chat_id is not None:
                 user.update_telegram_chat_id(
-                    TelegramChatId(request.telegram_chat_id) if request.telegram_chat_id else None
+                    TelegramChatId(request.telegram_chat_id)
+                    if request.telegram_chat_id
+                    else None
                 )
 
             if request.is_active is not None:
@@ -220,31 +216,27 @@ class UpdateUserUseCase:
                 name=user.name.value,
                 email=user.email.value if user.email else None,
                 phone=user.phone.value if user.phone else None,
-                telegram_chat_id=user.telegram_chat_id.value if user.telegram_chat_id else None,
+                telegram_chat_id=user.telegram_chat_id.value
+                if user.telegram_chat_id
+                else None,
                 is_active=user.is_active,
                 preferences=list(user.preferences),
                 available_channels=list(user.get_available_channels()),
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
             )
 
             return OperationResponse(
-                success=True,
-                message="User updated successfully",
-                data=response_data
+                success=True, message="User updated successfully", data=response_data
             )
 
         except ValueError as e:
             return OperationResponse(
-                success=False,
-                message="Invalid input data",
-                errors=[str(e)]
+                success=False, message="Invalid input data", errors=[str(e)]
             )
         except Exception as e:
             return OperationResponse(
-                success=False,
-                message="Failed to update user",
-                errors=[str(e)]
+                success=False, message="Failed to update user", errors=[str(e)]
             )
 
 
@@ -255,10 +247,7 @@ class GetAllActiveUsersUseCase:
         self._user_repository = user_repository
 
     @backoff.on_exception(
-        backoff.expo,
-        (ConnectionError, TimeoutError),
-        max_tries=2,
-        max_time=10
+        backoff.expo, (ConnectionError, TimeoutError), max_tries=2, max_time=10
     )
     async def execute(self) -> OperationResponse:
         """Execute the get all active users use case."""
@@ -267,28 +256,30 @@ class GetAllActiveUsersUseCase:
 
             response_data = []
             for user in users:
-                response_data.append(UserResponse(
-                    id=str(user.id.value),
-                    name=user.name.value,
-                    email=user.email.value if user.email else None,
-                    phone=user.phone.value if user.phone else None,
-                    telegram_chat_id=user.telegram_chat_id.value if user.telegram_chat_id else None,
-                    is_active=user.is_active,
-                    preferences=list(user.preferences),
-                    available_channels=list(user.get_available_channels()),
-                    created_at=user.created_at,
-                    updated_at=user.updated_at
-                ))
+                response_data.append(
+                    UserResponse(
+                        id=str(user.id.value),
+                        name=user.name.value,
+                        email=user.email.value if user.email else None,
+                        phone=user.phone.value if user.phone else None,
+                        telegram_chat_id=user.telegram_chat_id.value
+                        if user.telegram_chat_id
+                        else None,
+                        is_active=user.is_active,
+                        preferences=list(user.preferences),
+                        available_channels=list(user.get_available_channels()),
+                        created_at=user.created_at,
+                        updated_at=user.updated_at,
+                    )
+                )
 
             return OperationResponse(
                 success=True,
                 message=f"Retrieved {len(users)} active users",
-                data=response_data
+                data=response_data,
             )
 
         except Exception as e:
             return OperationResponse(
-                success=False,
-                message="Failed to retrieve users",
-                errors=[str(e)]
+                success=False, message="Failed to retrieve users", errors=[str(e)]
             )

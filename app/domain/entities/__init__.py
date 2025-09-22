@@ -1,12 +1,10 @@
-"""
-Base entity implementation.
-"""
-from abc import ABC
+"""Domain entities."""
+
 from datetime import UTC, datetime
 from typing import Any
 
 
-class Entity(ABC):
+class Entity:
     """Base class for all entities."""
 
     def __init__(self, entity_id: Any) -> None:
@@ -31,11 +29,13 @@ class Entity(ABC):
         self._updated_at = datetime.now(UTC)
 
     def __eq__(self, other: Any) -> bool:
+        """Default equality implementation for entities."""
         if not isinstance(other, self.__class__):
             return False
         return self._id == other._id
 
     def __hash__(self) -> int:
+        """Default hash implementation for entities."""
         return hash(self._id)
 
     def __repr__(self) -> str:
@@ -45,9 +45,15 @@ class Entity(ABC):
 class User(Entity):
     """User entity."""
 
-    def __init__(self, user_id: str, email: str | None = None,
-                 phone_number: str | None = None, telegram_id: str | None = None,
-                 preferences: dict[str, Any] | None = None, is_active: bool = True):
+    def __init__(
+        self,
+        user_id: str,
+        email: str | None = None,
+        phone_number: str | None = None,
+        telegram_id: str | None = None,
+        preferences: dict[str, Any] | None = None,
+        is_active: bool = True,
+    ):
         super().__init__(user_id)
         self._email = email
         self._phone_number = phone_number
@@ -99,8 +105,14 @@ class User(Entity):
 class Notification(Entity):
     """Notification entity."""
 
-    def __init__(self, notification_id: str, recipient_id: str, message_template: str,
-                 channels: list, priority: str = "MEDIUM"):
+    def __init__(
+        self,
+        notification_id: str,
+        recipient_id: str,
+        message_template: str,
+        channels: list[str],
+        priority: str = "MEDIUM",
+    ):
         super().__init__(notification_id)
         self._recipient_id = recipient_id
         self._message_template = message_template
@@ -117,7 +129,7 @@ class Notification(Entity):
         return self._message_template
 
     @property
-    def channels(self) -> list:
+    def channels(self) -> list[str]:
         return self._channels.copy()
 
     @property

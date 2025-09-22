@@ -1,6 +1,7 @@
 """
 Test configuration and fixtures.
 """
+
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -93,7 +94,7 @@ def sample_user_data():
         "phone_number": "+1234567890",
         "telegram_id": "@testuser",
         "is_active": True,
-        "preferences": {"email_notifications": True}
+        "preferences": {"email_notifications": True},
     }
 
 
@@ -107,7 +108,7 @@ def sample_notification_data():
         "message_variables": {"name": "John"},
         "channels": ["email", "sms"],
         "priority": "MEDIUM",
-        "metadata": {"source": "test"}
+        "metadata": {"source": "test"},
     }
 
 
@@ -119,5 +120,5 @@ def sample_delivery_data():
         "notification_id": "test-notification-456",
         "channel": "email",
         "provider": "smtp",
-        "status": "PENDING"
+        "status": "PENDING",
     }

@@ -99,8 +99,7 @@ class TestMessageTemplate:
     def test_valid_message_template(self):
         """Test creation of valid MessageTemplate."""
         template = MessageTemplate(
-            template="Hello {{name}}!",
-            variables={"name": "John"}
+            template="Hello {{name}}!", variables={"name": "John"}
         )
         assert template.template == "Hello {{name}}!"
         assert template.variables == {"name": "John"}
@@ -120,7 +119,7 @@ class TestMessageTemplate:
         """Test template rendering."""
         template = MessageTemplate(
             template="Hello {{name}}, your order {{order_id}} is ready!",
-            variables={"name": "John", "order_id": "12345"}
+            variables={"name": "John", "order_id": "12345"},
         )
         rendered = template.render()
         assert rendered == "Hello John, your order 12345 is ready!"
@@ -129,7 +128,7 @@ class TestMessageTemplate:
         """Test template rendering with missing variable."""
         template = MessageTemplate(
             template="Hello {{name}}, your order {{order_id}} is ready!",
-            variables={"name": "John"}  # missing order_id
+            variables={"name": "John"},  # missing order_id
         )
         rendered = template.render()
         # Should keep the placeholder for missing variables
@@ -216,10 +215,7 @@ class TestRetryPolicy:
     def test_custom_retry_policy(self):
         """Test creation of custom RetryPolicy."""
         policy = RetryPolicy(
-            max_attempts=5,
-            initial_delay=2.0,
-            max_delay=120.0,
-            exponential_base=1.5
+            max_attempts=5, initial_delay=2.0, max_delay=120.0, exponential_base=1.5
         )
         assert policy.max_attempts == 5
         assert policy.initial_delay == 2.0
@@ -229,10 +225,7 @@ class TestRetryPolicy:
     def test_calculate_delay(self):
         """Test delay calculation."""
         policy = RetryPolicy(
-            max_attempts=3,
-            initial_delay=1.0,
-            max_delay=10.0,
-            exponential_base=2.0
+            max_attempts=3, initial_delay=1.0, max_delay=10.0, exponential_base=2.0
         )
 
         # First retry (attempt 1): 1.0 * (2 ^ 0) = 1.0

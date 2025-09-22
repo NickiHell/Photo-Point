@@ -3,7 +3,6 @@ Fixed repository testing with correct API usage.
 Tests Infrastructure repositories with proper entity constructors.
 """
 
-
 import pytest
 
 from app.domain.entities.delivery import Delivery
@@ -36,6 +35,7 @@ from app.infrastructure.repositories.memory_repositories import (
 def create_test_email(email_str: str) -> Email:
     """Create email without deliverability check."""
     import email_validator
+
     result = email_validator.validate_email(email_str, check_deliverability=False)
     email_obj = Email.__new__(Email)
     email_obj._value = result.email
@@ -57,7 +57,7 @@ class TestInMemoryRepositoriesFixed:
             email=create_test_email("test@example.com"),
             phone=PhoneNumber("+1234567890"),
             telegram_chat_id=None,
-            is_active=True
+            is_active=True,
         )
 
         # Save and retrieve
@@ -80,14 +80,14 @@ class TestInMemoryRepositoriesFixed:
             user_id=UserId("active-user"),
             name=UserName("Active User"),
             email=create_test_email("active@example.com"),
-            is_active=True
+            is_active=True,
         )
 
         inactive_user = User(
             user_id=UserId("inactive-user"),
             name=UserName("Inactive User"),
             email=create_test_email("inactive@example.com"),
-            is_active=False
+            is_active=False,
         )
 
         await repo.save(active_user)
@@ -109,7 +109,7 @@ class TestInMemoryRepositoriesFixed:
         user = User(
             user_id=UserId("delete-user"),
             name=UserName("Delete User"),
-            email=create_test_email("delete@example.com")
+            email=create_test_email("delete@example.com"),
         )
         await repo.save(user)
 
@@ -133,9 +133,11 @@ class TestInMemoryRepositoriesFixed:
         notification = Notification(
             notification_id=NotificationId("notif-123"),
             recipient_id=UserId("user-123"),
-            message_template=MessageTemplate(subject="Test Subject", content="Hello {name}"),
+            message_template=MessageTemplate(
+                subject="Test Subject", content="Hello {name}"
+            ),
             priority=NotificationPriority.HIGH,
-            scheduled_at=None
+            scheduled_at=None,
         )
 
         # Save and retrieve
@@ -157,20 +159,20 @@ class TestInMemoryRepositoriesFixed:
         user = User(
             user_id=UserId("user-delivery"),
             name=UserName("Delivery User"),
-            email=create_test_email("delivery@example.com")
+            email=create_test_email("delivery@example.com"),
         )
 
         notification = Notification(
             notification_id=NotificationId("notif-delivery"),
             recipient_id=UserId("user-delivery"),
-            message_template=MessageTemplate(subject="Delivery", content="Delivery test")
+            message_template=MessageTemplate(
+                subject="Delivery", content="Delivery test"
+            ),
         )
 
         # Create delivery with correct constructor
         delivery = Delivery(
-            delivery_id=DeliveryId("delivery-123"),
-            notification=notification,
-            user=user
+            delivery_id=DeliveryId("delivery-123"), notification=notification, user=user
         )
 
         # Save and retrieve
@@ -208,7 +210,9 @@ class TestRepositoryErrorHandling:
         with pytest.raises(ValueError):
             User(
                 user_id=UserId("test-user"),
-                phone_number=PhoneNumber("invalid-phone")  # This should raise ValueError
+                phone_number=PhoneNumber(
+                    "invalid-phone"
+                ),  # This should raise ValueError
             )
 
 
@@ -226,7 +230,7 @@ class TestRepositoryIntegration:
             name=UserName("Workflow User"),
             email=create_test_email("workflow@example.com"),
             phone=PhoneNumber("+1234567890"),
-            is_active=True
+            is_active=True,
         )
 
         # Save user
@@ -256,7 +260,7 @@ class TestRepositoryIntegration:
         user = User(
             user_id=UserId("rel-user"),
             name=UserName("Relation User"),
-            email=create_test_email("rel@example.com")
+            email=create_test_email("rel@example.com"),
         )
         await user_repo.save(user)
 
@@ -264,15 +268,15 @@ class TestRepositoryIntegration:
         notification = Notification(
             notification_id=NotificationId("rel-notif"),
             recipient_id=UserId("rel-user"),
-            message_template=MessageTemplate(subject="Relation", content="Relationship test")
+            message_template=MessageTemplate(
+                subject="Relation", content="Relationship test"
+            ),
         )
         await notif_repo.save(notification)
 
         # Create delivery
         delivery = Delivery(
-            delivery_id=DeliveryId("rel-delivery"),
-            notification=notification,
-            user=user
+            delivery_id=DeliveryId("rel-delivery"), notification=notification, user=user
         )
         await delivery_repo.save(delivery)
 

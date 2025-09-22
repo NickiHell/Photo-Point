@@ -1,6 +1,7 @@
 """
 Comprehensive tests for all Infrastructure Adapters to maximize coverage.
 """
+
 import smtplib
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -22,7 +23,7 @@ class TestEmailNotificationAdapter:
             password="password",
             from_email="noreply@test.com",
             use_tls=True,
-            timeout=30
+            timeout=30,
         )
 
     @pytest.fixture
@@ -73,7 +74,9 @@ class TestEmailNotificationAdapter:
         """Test can_handle_user returns True for user with email."""
         assert email_adapter.can_handle_user(mock_user_with_email) is True
 
-    def test_can_handle_user_without_email(self, email_adapter, mock_user_without_email):
+    def test_can_handle_user_without_email(
+        self, email_adapter, mock_user_without_email
+    ):
         """Test can_handle_user returns False for user without email."""
         assert email_adapter.can_handle_user(mock_user_without_email) is False
 
@@ -83,9 +86,11 @@ class TestEmailNotificationAdapter:
         assert email_adapter.can_handle_user(mock_user_with_email) is False
 
     @pytest.mark.asyncio
-    async def test_send_success(self, email_adapter, mock_user_with_email, rendered_message):
+    async def test_send_success(
+        self, email_adapter, mock_user_with_email, rendered_message
+    ):
         """Test successful email sending."""
-        with patch('smtplib.SMTP') as mock_smtp:
+        with patch("smtplib.SMTP") as mock_smtp:
             mock_server = Mock()
             mock_smtp.return_value.__enter__.return_value = mock_server
             mock_server.send_message.return_value = {}
@@ -98,7 +103,9 @@ class TestEmailNotificationAdapter:
             assert result.error is None
 
     @pytest.mark.asyncio
-    async def test_send_user_cannot_handle(self, email_adapter, mock_user_without_email, rendered_message):
+    async def test_send_user_cannot_handle(
+        self, email_adapter, mock_user_without_email, rendered_message
+    ):
         """Test sending to user that cannot be handled."""
         result = await email_adapter.send(mock_user_without_email, rendered_message)
 
@@ -109,9 +116,11 @@ class TestEmailNotificationAdapter:
         assert result.error.code == "USER_NOT_SUITABLE"
 
     @pytest.mark.asyncio
-    async def test_send_smtp_error(self, email_adapter, mock_user_with_email, rendered_message):
+    async def test_send_smtp_error(
+        self, email_adapter, mock_user_with_email, rendered_message
+    ):
         """Test email sending with SMTP error."""
-        with patch('smtplib.SMTP') as mock_smtp:
+        with patch("smtplib.SMTP") as mock_smtp:
             mock_smtp.side_effect = smtplib.SMTPException("SMTP Error")
 
             result = await email_adapter.send(mock_user_with_email, rendered_message)
@@ -123,9 +132,11 @@ class TestEmailNotificationAdapter:
             assert result.error.code == "SMTP_ERROR"
 
     @pytest.mark.asyncio
-    async def test_send_timeout_error(self, email_adapter, mock_user_with_email, rendered_message):
+    async def test_send_timeout_error(
+        self, email_adapter, mock_user_with_email, rendered_message
+    ):
         """Test email sending with timeout."""
-        with patch('smtplib.SMTP') as mock_smtp:
+        with patch("smtplib.SMTP") as mock_smtp:
             mock_smtp.side_effect = TimeoutError("Timeout")
 
             result = await email_adapter.send(mock_user_with_email, rendered_message)
@@ -147,10 +158,10 @@ class TestEmailNotificationAdapter:
             username="test",
             password="pass",
             from_email="from@test.com",
-            use_tls=False
+            use_tls=False,
         )
 
-        with patch('smtplib.SMTP') as mock_smtp:
+        with patch("smtplib.SMTP") as mock_smtp:
             mock_server = Mock()
             mock_smtp.return_value.__enter__.return_value = mock_server
             mock_server.send_message.return_value = {}
@@ -174,7 +185,7 @@ class TestSMSNotificationAdapter:
             api_url="https://api.sms.test",
             api_key="test-key",
             sender_id="TEST",
-            timeout=30
+            timeout=30,
         )
 
     @pytest.fixture
@@ -231,12 +242,17 @@ class TestSMSNotificationAdapter:
         assert sms_adapter.can_handle_user(mock_user_with_phone) is False
 
     @pytest.mark.asyncio
-    async def test_send_success(self, sms_adapter, mock_user_with_phone, rendered_message):
+    async def test_send_success(
+        self, sms_adapter, mock_user_with_phone, rendered_message
+    ):
         """Test successful SMS sending."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 200
-            mock_response.json.return_value = {"message_id": "sms-123", "status": "sent"}
+            mock_response.json.return_value = {
+                "message_id": "sms-123",
+                "status": "sent",
+            }
             mock_post.return_value.__aenter__.return_value = mock_response
 
             result = await sms_adapter.send(mock_user_with_phone, rendered_message)
@@ -247,7 +263,9 @@ class TestSMSNotificationAdapter:
             assert result.metadata["message_id"] == "sms-123"
 
     @pytest.mark.asyncio
-    async def test_send_user_cannot_handle(self, sms_adapter, mock_user_without_phone, rendered_message):
+    async def test_send_user_cannot_handle(
+        self, sms_adapter, mock_user_without_phone, rendered_message
+    ):
         """Test sending to user that cannot be handled."""
         result = await sms_adapter.send(mock_user_without_phone, rendered_message)
 
@@ -258,9 +276,11 @@ class TestSMSNotificationAdapter:
         assert result.error.code == "USER_NOT_SUITABLE"
 
     @pytest.mark.asyncio
-    async def test_send_api_error(self, sms_adapter, mock_user_with_phone, rendered_message):
+    async def test_send_api_error(
+        self, sms_adapter, mock_user_with_phone, rendered_message
+    ):
         """Test SMS sending with API error."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 400
             mock_response.text.return_value = "Invalid request"
@@ -275,9 +295,11 @@ class TestSMSNotificationAdapter:
             assert result.error.code == "API_ERROR"
 
     @pytest.mark.asyncio
-    async def test_send_timeout_error(self, sms_adapter, mock_user_with_phone, rendered_message):
+    async def test_send_timeout_error(
+        self, sms_adapter, mock_user_with_phone, rendered_message
+    ):
         """Test SMS sending with timeout."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_post.side_effect = TimeoutError("Timeout")
 
             result = await sms_adapter.send(mock_user_with_phone, rendered_message)
@@ -302,7 +324,7 @@ class TestTelegramNotificationAdapter:
         return TelegramNotificationAdapter(
             bot_token="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
             api_base_url="https://api.telegram.org",
-            timeout=30
+            timeout=30,
         )
 
     @pytest.fixture
@@ -333,7 +355,9 @@ class TestTelegramNotificationAdapter:
     def test_adapter_initialization(self, telegram_adapter):
         """Test TelegramNotificationAdapter initialization."""
         assert telegram_adapter.name == "TelegramNotificationAdapter"
-        assert telegram_adapter._bot_token == "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+        assert (
+            telegram_adapter._bot_token == "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+        )
         assert telegram_adapter._api_base_url == "https://api.telegram.org"
         assert telegram_adapter._timeout == 30
 
@@ -344,11 +368,15 @@ class TestTelegramNotificationAdapter:
         channel_type = telegram_adapter.get_channel_type()
         assert channel_type == NotificationType.TELEGRAM
 
-    def test_can_handle_user_with_telegram(self, telegram_adapter, mock_user_with_telegram):
+    def test_can_handle_user_with_telegram(
+        self, telegram_adapter, mock_user_with_telegram
+    ):
         """Test can_handle_user returns True for user with telegram."""
         assert telegram_adapter.can_handle_user(mock_user_with_telegram) is True
 
-    def test_can_handle_user_without_telegram(self, telegram_adapter, mock_user_without_telegram):
+    def test_can_handle_user_without_telegram(
+        self, telegram_adapter, mock_user_without_telegram
+    ):
         """Test can_handle_user returns False for user without telegram."""
         assert telegram_adapter.can_handle_user(mock_user_without_telegram) is False
 
@@ -358,18 +386,22 @@ class TestTelegramNotificationAdapter:
         assert telegram_adapter.can_handle_user(mock_user_with_telegram) is False
 
     @pytest.mark.asyncio
-    async def test_send_success(self, telegram_adapter, mock_user_with_telegram, rendered_message):
+    async def test_send_success(
+        self, telegram_adapter, mock_user_with_telegram, rendered_message
+    ):
         """Test successful Telegram message sending."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json.return_value = {
                 "ok": True,
-                "result": {"message_id": 123, "date": 1640995200}
+                "result": {"message_id": 123, "date": 1640995200},
             }
             mock_post.return_value.__aenter__.return_value = mock_response
 
-            result = await telegram_adapter.send(mock_user_with_telegram, rendered_message)
+            result = await telegram_adapter.send(
+                mock_user_with_telegram, rendered_message
+            )
 
             assert result.success is True
             assert result.provider == "TelegramNotificationAdapter"
@@ -377,9 +409,13 @@ class TestTelegramNotificationAdapter:
             assert result.metadata["message_id"] == 123
 
     @pytest.mark.asyncio
-    async def test_send_user_cannot_handle(self, telegram_adapter, mock_user_without_telegram, rendered_message):
+    async def test_send_user_cannot_handle(
+        self, telegram_adapter, mock_user_without_telegram, rendered_message
+    ):
         """Test sending to user that cannot be handled."""
-        result = await telegram_adapter.send(mock_user_without_telegram, rendered_message)
+        result = await telegram_adapter.send(
+            mock_user_without_telegram, rendered_message
+        )
 
         assert result.success is False
         assert result.provider == "TelegramNotificationAdapter"
@@ -388,19 +424,23 @@ class TestTelegramNotificationAdapter:
         assert result.error.code == "USER_NOT_SUITABLE"
 
     @pytest.mark.asyncio
-    async def test_send_api_error(self, telegram_adapter, mock_user_with_telegram, rendered_message):
+    async def test_send_api_error(
+        self, telegram_adapter, mock_user_with_telegram, rendered_message
+    ):
         """Test Telegram sending with API error."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 400
             mock_response.json.return_value = {
                 "ok": False,
                 "error_code": 400,
-                "description": "Bad Request: chat not found"
+                "description": "Bad Request: chat not found",
             }
             mock_post.return_value.__aenter__.return_value = mock_response
 
-            result = await telegram_adapter.send(mock_user_with_telegram, rendered_message)
+            result = await telegram_adapter.send(
+                mock_user_with_telegram, rendered_message
+            )
 
             assert result.success is False
             assert result.provider == "TelegramNotificationAdapter"
@@ -409,12 +449,16 @@ class TestTelegramNotificationAdapter:
             assert result.error.code == "API_ERROR"
 
     @pytest.mark.asyncio
-    async def test_send_timeout_error(self, telegram_adapter, mock_user_with_telegram, rendered_message):
+    async def test_send_timeout_error(
+        self, telegram_adapter, mock_user_with_telegram, rendered_message
+    ):
         """Test Telegram sending with timeout."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_post.side_effect = TimeoutError("Timeout")
 
-            result = await telegram_adapter.send(mock_user_with_telegram, rendered_message)
+            result = await telegram_adapter.send(
+                mock_user_with_telegram, rendered_message
+            )
 
             assert result.success is False
             assert result.provider == "TelegramNotificationAdapter"
@@ -423,21 +467,21 @@ class TestTelegramNotificationAdapter:
             assert result.error.code == "TIMEOUT"
 
     @pytest.mark.asyncio
-    async def test_send_with_parse_mode(self, telegram_adapter, mock_user_with_telegram, rendered_message):
+    async def test_send_with_parse_mode(
+        self, telegram_adapter, mock_user_with_telegram, rendered_message
+    ):
         """Test sending with custom parse mode."""
-        with patch('aiohttp.ClientSession.post') as mock_post:
+        with patch("aiohttp.ClientSession.post") as mock_post:
             mock_response = AsyncMock()
             mock_response.status = 200
             mock_response.json.return_value = {
                 "ok": True,
-                "result": {"message_id": 123}
+                "result": {"message_id": 123},
             }
             mock_post.return_value.__aenter__.return_value = mock_response
 
             result = await telegram_adapter.send(
-                mock_user_with_telegram,
-                rendered_message,
-                parse_mode="Markdown"
+                mock_user_with_telegram, rendered_message, parse_mode="Markdown"
             )
 
             assert result.success is True
@@ -467,11 +511,11 @@ class TestAdapterErrorHandling:
         network_errors = [
             ConnectionError("Connection failed"),
             OSError("Network unreachable"),
-            Exception("Unknown network error")
+            Exception("Unknown network error"),
         ]
 
         for error in network_errors:
-            with patch('aiohttp.ClientSession.post', side_effect=error):
+            with patch("aiohttp.ClientSession.post", side_effect=error):
                 result = await adapter.send(user, message)
                 assert result.success is False
                 assert result.error is not None

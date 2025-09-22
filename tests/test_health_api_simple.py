@@ -1,6 +1,7 @@
 """
 Simplified API routes tests focused on working endpoints.
 """
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -12,6 +13,7 @@ def health_app():
     try:
         app = FastAPI(title="Health Test App")
         from app.presentation.api.routes.health import router as health_router
+
         app.include_router(health_router, prefix="/health")
         return app
     except ImportError:
@@ -23,17 +25,14 @@ def health_app():
             return {
                 "status": "healthy",
                 "service": "notification-service",
-                "version": "1.0.0"
+                "version": "1.0.0",
             }
 
         @app.get("/health/ready")
         async def readiness_check():
             return {
                 "status": "ready",
-                "checks": {
-                    "database": "healthy",
-                    "cache": "healthy"
-                }
+                "checks": {"database": "healthy", "cache": "healthy"},
             }
 
         @app.get("/health/live")
@@ -144,11 +143,14 @@ class TestFastAPIIntegration:
             assert data["status"] == "healthy"
 
 
-@pytest.mark.parametrize("endpoint,expected_status", [
-    ("/health/", "healthy"),
-    ("/health/ready", "ready"),
-    ("/health/live", "alive"),
-])
+@pytest.mark.parametrize(
+    "endpoint,expected_status",
+    [
+        ("/health/", "healthy"),
+        ("/health/ready", "ready"),
+        ("/health/live", "alive"),
+    ],
+)
 def test_health_endpoints_parametrized(health_client, endpoint, expected_status):
     """Test health endpoints with parametrized testing."""
     response = health_client.get(endpoint)
@@ -162,6 +164,7 @@ def test_health_routes_import():
     """Test that health routes can be imported."""
     try:
         from app.presentation.api.routes.health import router
+
         assert router is not None
     except ImportError:
         # If import fails, that's also valid for testing

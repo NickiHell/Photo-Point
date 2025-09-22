@@ -1,6 +1,7 @@
 """
 SMS notification adapter using Twilio.
 """
+
 import logging
 import re
 
@@ -20,7 +21,7 @@ class SMSNotificationAdapter(NotificationProviderInterface):
         account_sid: str,
         auth_token: str,
         from_phone: str,
-        max_message_length: int = 1600
+        max_message_length: int = 1600,
     ) -> None:
         self._account_sid = account_sid
         self._auth_token = auth_token
@@ -35,9 +36,12 @@ class SMSNotificationAdapter(NotificationProviderInterface):
         if self._client is None:
             try:
                 from twilio.rest import Client
+
                 self._client = Client(self._account_sid, self._auth_token)
             except ImportError:
-                logger.error("Twilio library not installed. Install with: pip install twilio")
+                logger.error(
+                    "Twilio library not installed. Install with: pip install twilio"
+                )
                 raise
         return self._client
 
@@ -55,16 +59,16 @@ class SMSNotificationAdapter(NotificationProviderInterface):
     def _normalize_phone_number(self, phone: str) -> str:
         """Normalize phone number format."""
         # Remove all non-digit characters except +
-        cleaned = re.sub(r'[^\d+]', '', phone)
+        cleaned = re.sub(r"[^\d+]", "", phone)
 
         # Ensure it starts with +
-        if not cleaned.startswith('+'):
-            if cleaned.startswith('8'):
-                cleaned = '+7' + cleaned[1:]  # Russian numbers
-            elif cleaned.startswith('7'):
-                cleaned = '+' + cleaned
+        if not cleaned.startswith("+"):
+            if cleaned.startswith("8"):
+                cleaned = "+7" + cleaned[1:]  # Russian numbers
+            elif cleaned.startswith("7"):
+                cleaned = "+" + cleaned
             else:
-                cleaned = '+' + cleaned
+                cleaned = "+" + cleaned
 
         return cleaned
 
@@ -73,13 +77,13 @@ class SMSNotificationAdapter(NotificationProviderInterface):
         if not self.can_handle_user(user):
             error = DeliveryError(
                 code="USER_NOT_REACHABLE",
-                message="User does not have phone configured or is inactive"
+                message="User does not have phone configured or is inactive",
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Cannot send SMS to user",
-                error=error
+                error=error,
             )
 
         try:
@@ -88,16 +92,14 @@ class SMSNotificationAdapter(NotificationProviderInterface):
             # Prepare message content (SMS doesn't use subject)
             content = message.content.value
             if len(content) > self._max_message_length:
-                content = content[:self._max_message_length - 3] + "..."
+                content = content[: self._max_message_length - 3] + "..."
 
             # Normalize phone number
-            to_phone = self._normalize_phone_number(user.phone.value)
+            to_phone = self._normalize_phone_number(user.phone.value if user.phone else "")
 
             # Send SMS
             message_obj = client.messages.create(
-                body=content,
-                from_=self._from_phone,
-                to=to_phone
+                body=content, from_=self._from_phone, to=to_phone
             )
 
             logger.info(f"SMS sent successfully to {to_phone}, SID: {message_obj.sid}")
@@ -109,21 +111,20 @@ class SMSNotificationAdapter(NotificationProviderInterface):
                 metadata={
                     "recipient": to_phone,
                     "message_sid": message_obj.sid,
-                    "status": message_obj.status
-                }
+                    "status": message_obj.status,
+                },
             )
 
         except ImportError:
             logger.error("Twilio library not available")
             error = DeliveryError(
-                code="DEPENDENCY_ERROR",
-                message="Twilio library not installed"
+                code="DEPENDENCY_ERROR", message="Twilio library not installed"
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Twilio library not available",
-                error=error
+                error=error,
             )
 
         except Exception as e:
@@ -132,28 +133,23 @@ class SMSNotificationAdapter(NotificationProviderInterface):
             error_message = "Twilio API error"
 
             # Try to extract more specific error information
-            if hasattr(e, 'status'):
+            if hasattr(e, "status"):
                 if e.status == 401:
                     error_code = "AUTHENTICATION_ERROR"
                     error_message = "Invalid Twilio credentials"
                 elif e.status == 429:
                     error_code = "RATE_LIMIT_ERROR"
                     error_message = "Twilio rate limit exceeded"
-                elif hasattr(e, 'code') and e.code == 21614:
+                elif hasattr(e, "code") and e.code == 21614:
                     error_code = "INVALID_PHONE_NUMBER"
                     error_message = "Invalid phone number"
 
             logger.error(f"SMS sending failed: {e}")
             error = DeliveryError(
-                code=error_code,
-                message=error_message,
-                details={"twilio_error": str(e)}
+                code=error_code, message=error_message, details={"twilio_error": str(e)}
             )
             return DeliveryResult(
-                success=False,
-                provider=self.name,
-                message=error_message,
-                error=error
+                success=False, provider=self.name, message=error_message, error=error
             )
 
     async def validate_configuration(self) -> bool:
@@ -164,12 +160,12 @@ class SMSNotificationAdapter(NotificationProviderInterface):
             # Try to fetch account information to validate credentials
             account = client.api.accounts(self._account_sid).fetch()
 
-            if account.status != 'active':
+            if account.status != "active":
                 logger.error(f"Twilio account status: {account.status}")
                 return False
 
             # Validate from phone number format
-            if not self._from_phone.startswith('+'):
+            if not self._from_phone.startswith("+"):
                 logger.error("From phone number must start with '+'")
                 return False
 

@@ -1,6 +1,7 @@
 """
 Notification entity and related domain objects.
 """
+
 from datetime import UTC, datetime
 from typing import Any
 
@@ -25,7 +26,7 @@ class Notification(Entity):
         priority: NotificationPriority = NotificationPriority.NORMAL,
         scheduled_at: datetime | None = None,
         expires_at: datetime | None = None,
-        metadata: dict[str, Any] | None = None
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(notification_id)
         self._recipient_id = recipient_id

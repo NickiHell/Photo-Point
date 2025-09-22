@@ -1,6 +1,7 @@
 """
 Logging configuration and setup.
 """
+
 import logging
 import sys
 
@@ -14,7 +15,7 @@ try:
         logging.basicConfig(
             format="%(message)s",
             stream=sys.stdout,
-            level=getattr(logging, config.level.upper(), logging.INFO)
+            level=getattr(logging, config.level.upper(), logging.INFO),
         )
 
         # Configure structlog
@@ -39,7 +40,7 @@ try:
             cache_logger_on_first_use=True,
         )
 
-    def get_logger(name: str = None):
+    def get_logger(name: str | None = None):
         """Get a structured logger instance."""
         return structlog.get_logger(name)
 
@@ -49,9 +50,9 @@ except ImportError:
         """Setup standard logging."""
         logging.basicConfig(
             level=getattr(logging, config.level.upper(), logging.INFO),
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
 
-    def get_logger(name: str = None):
+    def get_logger(name: str | None = None):
         """Get a standard logger instance."""
         return logging.getLogger(name or __name__)

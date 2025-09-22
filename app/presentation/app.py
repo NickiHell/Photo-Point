@@ -1,8 +1,10 @@
 """
-FastAPI application factory and main app configuration.
+Main FastAPI application configuration.
 """
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
 try:
     from fastapi import FastAPI
@@ -12,7 +14,6 @@ try:
     from ..infrastructure.logging import setup_logging
     from .api.routes import deliveries, health, notifications, users
     from .dependencies import get_container
-
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -31,8 +32,7 @@ try:
         # Cleanup
         await container.shutdown_resources()
 
-
-    def create_app() -> FastAPI:
+    def create_app() -> Any:
         """Create and configure FastAPI application."""
         config = get_config()
 
@@ -43,7 +43,7 @@ try:
             debug=config.debug,
             docs_url=config.api.docs_url,
             redoc_url=config.api.redoc_url,
-            lifespan=lifespan
+            lifespan=lifespan,
         )
 
         # CORS middleware
@@ -58,12 +58,18 @@ try:
         # Include routers
         app.include_router(health.router, prefix="/health", tags=["health"])
         app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
-        app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
-        app.include_router(deliveries.router, prefix="/api/v1/deliveries", tags=["deliveries"])
+        app.include_router(
+            notifications.router, prefix="/api/v1/notifications", tags=["notifications"]
+        )
+        app.include_router(
+            deliveries.router, prefix="/api/v1/deliveries", tags=["deliveries"]
+        )
 
         return app
 
 except ImportError:
     # Fallback when FastAPI is not available
     def create_app():
-        raise ImportError("FastAPI is not installed. Please install it with: pip install fastapi uvicorn")
+        raise ImportError(
+            "FastAPI is not installed. Please install it with: pip install fastapi uvicorn"
+        )

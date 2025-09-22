@@ -1,6 +1,7 @@
 """
 Command Line Interface for the notification service.
 """
+
 import asyncio
 import json
 from datetime import datetime
@@ -16,10 +17,9 @@ try:
     from ..infrastructure.logging import get_logger, setup_logging
     from ..presentation.dependencies import get_container
 
-
     @click.group()
-    @click.option('--config-file', '-c', help='Configuration file path')
-    @click.option('--log-level', '-l', default='INFO', help='Logging level')
+    @click.option("--config-file", "-c", help="Configuration file path")
+    @click.option("--log-level", "-l", default="INFO", help="Logging level")
     @click.pass_context
     def cli(ctx, config_file: str | None, log_level: str):
         """Notification Service CLI."""
@@ -29,28 +29,33 @@ try:
         config.logging.level = log_level
         setup_logging(config.logging)
 
-        ctx.obj['config'] = config
-        ctx.obj['logger'] = get_logger("cli")
-        ctx.obj['container'] = get_container()
-
+        ctx.obj["config"] = config
+        ctx.obj["logger"] = get_logger("cli")
+        ctx.obj["container"] = get_container()
 
     @cli.group()
     def user():
         """User management commands."""
         pass
 
-
     @user.command()
-    @click.option('--email', '-e', help='User email address')
-    @click.option('--phone', '-p', help='User phone number')
-    @click.option('--telegram', '-t', help='User Telegram ID')
-    @click.option('--preferences', help='User preferences as JSON string')
+    @click.option("--email", "-e", help="User email address")
+    @click.option("--phone", "-p", help="User phone number")
+    @click.option("--telegram", "-t", help="User Telegram ID")
+    @click.option("--preferences", help="User preferences as JSON string")
     @click.pass_context
-    def create(ctx, email: str | None, phone: str | None, telegram: str | None, preferences: str | None):
+    def create(
+        ctx,
+        email: str | None,
+        phone: str | None,
+        telegram: str | None,
+        preferences: str | None,
+    ):
         """Create a new user."""
+
         async def _create_user():
-            container = ctx.obj['container']
-            logger = ctx.obj['logger']
+            container = ctx.obj["container"]
+            logger = ctx.obj["logger"]
 
             prefs = {}
             if preferences:
@@ -61,10 +66,7 @@ try:
                     return
 
             dto = CreateUserDTO(
-                email=email,
-                phone_number=phone,
-                telegram_id=telegram,
-                preferences=prefs
+                email=email, phone_number=phone, telegram_id=telegram, preferences=prefs
             )
 
             try:
@@ -84,15 +86,15 @@ try:
 
         asyncio.run(_create_user())
 
-
     @user.command()
-    @click.argument('user_id')
+    @click.argument("user_id")
     @click.pass_context
     def get(ctx, user_id: str):
         """Get user by ID."""
+
         async def _get_user():
-            container = ctx.obj['container']
-            logger = ctx.obj['logger']
+            container = ctx.obj["container"]
+            logger = ctx.obj["logger"]
 
             try:
                 use_case = container.get_user_use_case()
@@ -107,9 +109,16 @@ try:
                         ["Telegram", user_response.telegram_id or "Not set"],
                         ["Active", "Yes" if user_response.is_active else "No"],
                         ["Created", user_response.created_at],
-                        ["Preferences", json.dumps(user_response.preferences, indent=2) if user_response.preferences else "None"]
+                        [
+                            "Preferences",
+                            json.dumps(user_response.preferences, indent=2)
+                            if user_response.preferences
+                            else "None",
+                        ],
                     ]
-                    click.echo(tabulate(data, headers=["Field", "Value"], tablefmt="grid"))
+                    click.echo(
+                        tabulate(data, headers=["Field", "Value"], tablefmt="grid")
+                    )
                 else:
                     click.echo(f"User {user_id} not found")
 
@@ -119,26 +128,39 @@ try:
 
         asyncio.run(_get_user())
 
-
     @cli.group()
     def notification():
         """Notification management commands."""
         pass
 
-
     @notification.command()
-    @click.argument('recipient_id')
-    @click.argument('message')
-    @click.option('--channels', '-c', multiple=True, default=['email'], help='Notification channels')
-    @click.option('--priority', '-p', default='MEDIUM', help='Notification priority')
-    @click.option('--scheduled', '-s', help='Schedule time (ISO format)')
-    @click.option('--variables', help='Template variables as JSON string')
+    @click.argument("recipient_id")
+    @click.argument("message")
+    @click.option(
+        "--channels",
+        "-c",
+        multiple=True,
+        default=["email"],
+        help="Notification channels",
+    )
+    @click.option("--priority", "-p", default="MEDIUM", help="Notification priority")
+    @click.option("--scheduled", "-s", help="Schedule time (ISO format)")
+    @click.option("--variables", help="Template variables as JSON string")
     @click.pass_context
-    def send(ctx, recipient_id: str, message: str, channels: tuple, priority: str, scheduled: str | None, variables: str | None):
+    def send(
+        ctx,
+        recipient_id: str,
+        message: str,
+        channels: tuple,
+        priority: str,
+        scheduled: str | None,
+        variables: str | None,
+    ):
         """Send a notification."""
+
         async def _send_notification():
-            container = ctx.obj['container']
-            logger = ctx.obj['logger']
+            container = ctx.obj["container"]
+            logger = ctx.obj["logger"]
 
             vars_dict = {}
             if variables:
@@ -151,7 +173,9 @@ try:
             scheduled_at = None
             if scheduled:
                 try:
-                    scheduled_at = datetime.fromisoformat(scheduled.replace('Z', '+00:00'))
+                    scheduled_at = datetime.fromisoformat(
+                        scheduled.replace("Z", "+00:00")
+                    )
                 except ValueError as e:
                     logger.error("Invalid date format", error=str(e))
                     return
@@ -162,7 +186,7 @@ try:
                 message_variables=vars_dict,
                 channels=list(channels),
                 priority=priority,
-                scheduled_at=scheduled_at
+                scheduled_at=scheduled_at,
             )
 
             try:
@@ -183,19 +207,21 @@ try:
 
         asyncio.run(_send_notification())
 
-
     @notification.command()
-    @click.argument('notification_id')
+    @click.argument("notification_id")
     @click.pass_context
     def status(ctx, notification_id: str):
         """Get notification status."""
+
         async def _get_status():
-            container = ctx.obj['container']
-            logger = ctx.obj['logger']
+            container = ctx.obj["container"]
+            logger = ctx.obj["logger"]
 
             try:
                 use_case = container.get_notification_status_use_case()
-                status_response = await use_case.execute(NotificationId(notification_id))
+                status_response = await use_case.execute(
+                    NotificationId(notification_id)
+                )
 
                 if status_response:
                     click.echo("Notification Status:")
@@ -207,18 +233,30 @@ try:
                         click.echo("\nDeliveries:")
                         delivery_data = []
                         for delivery in status_response.deliveries:
-                            delivery_data.append([
-                                delivery.delivery_id,
-                                delivery.channel,
-                                delivery.provider,
-                                delivery.status,
-                                delivery.attempts,
-                                delivery.created_at,
-                                delivery.completed_at or "In progress"
-                            ])
+                            delivery_data.append(
+                                [
+                                    delivery.delivery_id,
+                                    delivery.channel,
+                                    delivery.provider,
+                                    delivery.status,
+                                    delivery.attempts,
+                                    delivery.created_at,
+                                    delivery.completed_at or "In progress",
+                                ]
+                            )
 
-                        headers = ["ID", "Channel", "Provider", "Status", "Attempts", "Created", "Completed"]
-                        click.echo(tabulate(delivery_data, headers=headers, tablefmt="grid"))
+                        headers = [
+                            "ID",
+                            "Channel",
+                            "Provider",
+                            "Status",
+                            "Attempts",
+                            "Created",
+                            "Completed",
+                        ]
+                        click.echo(
+                            tabulate(delivery_data, headers=headers, tablefmt="grid")
+                        )
 
                 else:
                     click.echo(f"Notification {notification_id} not found")
@@ -229,17 +267,15 @@ try:
 
         asyncio.run(_get_status())
 
-
     @cli.group()
     def server():
         """Server management commands."""
         pass
 
-
     @server.command()
-    @click.option('--host', '-h', default='0.0.0.0', help='Host to bind to')
-    @click.option('--port', '-p', default=8000, help='Port to bind to')
-    @click.option('--reload', is_flag=True, help='Enable auto-reload')
+    @click.option("--host", "-h", default="0.0.0.0", help="Host to bind to")
+    @click.option("--port", "-p", default=8000, help="Port to bind to")
+    @click.option("--reload", is_flag=True, help="Enable auto-reload")
     @click.pass_context
     def start(ctx, host: str, port: int, reload: bool):
         """Start the FastAPI server."""
@@ -254,27 +290,24 @@ try:
             if reload:
                 click.echo("Auto-reload enabled")
 
-            uvicorn.run(
-                app,
-                host=host,
-                port=port,
-                reload=reload,
-                log_level="info"
-            )
+            uvicorn.run(app, host=host, port=port, reload=reload, log_level="info")
 
         except ImportError:
-            click.echo("uvicorn is not installed. Please install it with: pip install uvicorn")
+            click.echo(
+                "uvicorn is not installed. Please install it with: pip install uvicorn"
+            )
         except Exception as e:
             click.echo(f"Failed to start server: {e}")
 
-
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         cli()
 
 except ImportError:
     # Fallback when click is not available
-    def cli():
-        print("CLI dependencies not installed. Please install with: pip install click tabulate")
+    def cli():  # type: ignore[misc]
+        print(
+            "CLI dependencies not installed. Please install with: pip install click tabulate"
+        )
 
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         cli()

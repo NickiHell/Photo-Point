@@ -11,7 +11,9 @@ class NotificationProvider(ABC):
     """Базовый класс для всех провайдеров уведомлений."""
 
     @abstractmethod
-    async def send(self, user: User, message: NotificationMessage) -> NotificationResult:
+    async def send(
+        self, user: User, message: NotificationMessage
+    ) -> NotificationResult:
         """Отправить уведомление пользователю."""
         pass
 

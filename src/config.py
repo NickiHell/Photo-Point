@@ -6,9 +6,9 @@ import logging
 import os
 
 from dotenv import load_dotenv
+from notification_service.src.providers.email import EmailProvider
 
 from src.exceptions import ConfigurationError
-from src.providers.email import EmailProvider
 from src.providers.sms import SMSProvider
 from src.providers.telegram import TelegramProvider
 from src.service import NotificationService
@@ -22,7 +22,7 @@ def setup_logging(level: str = "INFO") -> None:
     logging.basicConfig(
         level=getattr(logging, level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 
@@ -54,7 +54,7 @@ def create_telegram_provider() -> TelegramProvider | None:
 
 
 def create_notification_service(
-    provider_order: list[str] | None = None
+    provider_order: list[str] | None = None,
 ) -> NotificationService:
     """
     Создать сервис уведомлений с доступными провайдерами.
@@ -73,7 +73,7 @@ def create_notification_service(
     provider_creators = {
         "email": create_email_provider,
         "sms": create_sms_provider,
-        "telegram": create_telegram_provider
+        "telegram": create_telegram_provider,
     }
 
     providers = []
@@ -89,7 +89,9 @@ def create_notification_service(
             logging.warning(f"Unknown provider: {provider_name}")
 
     if not providers:
-        raise ConfigurationError("No providers configured. Please check your environment variables.")
+        raise ConfigurationError(
+            "No providers configured. Please check your environment variables."
+        )
 
     logging.info(f"Created notification service with {len(providers)} providers")
     return NotificationService(providers)
@@ -132,13 +134,26 @@ class Config:
         issues = []
 
         # Проверяем Email конфигурацию
-        if any([cls.EMAIL_SMTP_HOST, cls.EMAIL_USER, cls.EMAIL_PASSWORD, cls.EMAIL_FROM]):
-            if not all([cls.EMAIL_SMTP_HOST, cls.EMAIL_USER, cls.EMAIL_PASSWORD, cls.EMAIL_FROM]):
+        if any(
+            [cls.EMAIL_SMTP_HOST, cls.EMAIL_USER, cls.EMAIL_PASSWORD, cls.EMAIL_FROM]
+        ):
+            if not all(
+                [
+                    cls.EMAIL_SMTP_HOST,
+                    cls.EMAIL_USER,
+                    cls.EMAIL_PASSWORD,
+                    cls.EMAIL_FROM,
+                ]
+            ):
                 issues.append("Incomplete Email configuration")
 
         # Проверяем SMS конфигурацию
-        if any([cls.TWILIO_ACCOUNT_SID, cls.TWILIO_AUTH_TOKEN, cls.TWILIO_PHONE_NUMBER]):
-            if not all([cls.TWILIO_ACCOUNT_SID, cls.TWILIO_AUTH_TOKEN, cls.TWILIO_PHONE_NUMBER]):
+        if any(
+            [cls.TWILIO_ACCOUNT_SID, cls.TWILIO_AUTH_TOKEN, cls.TWILIO_PHONE_NUMBER]
+        ):
+            if not all(
+                [cls.TWILIO_ACCOUNT_SID, cls.TWILIO_AUTH_TOKEN, cls.TWILIO_PHONE_NUMBER]
+            ):
                 issues.append("Incomplete SMS/Twilio configuration")
 
         # Проверяем Telegram конфигурацию
@@ -146,8 +161,12 @@ class Config:
             issues.append("Telegram bot token is missing")
 
         # Проверяем, что хотя бы один провайдер настроен
-        has_email = all([cls.EMAIL_SMTP_HOST, cls.EMAIL_USER, cls.EMAIL_PASSWORD, cls.EMAIL_FROM])
-        has_sms = all([cls.TWILIO_ACCOUNT_SID, cls.TWILIO_AUTH_TOKEN, cls.TWILIO_PHONE_NUMBER])
+        has_email = all(
+            [cls.EMAIL_SMTP_HOST, cls.EMAIL_USER, cls.EMAIL_PASSWORD, cls.EMAIL_FROM]
+        )
+        has_sms = all(
+            [cls.TWILIO_ACCOUNT_SID, cls.TWILIO_AUTH_TOKEN, cls.TWILIO_PHONE_NUMBER]
+        )
         has_telegram = bool(cls.TELEGRAM_BOT_TOKEN)
 
         if not any([has_email, has_sms, has_telegram]):
@@ -169,5 +188,5 @@ class Config:
             "provider_order": cls.PROVIDER_ORDER,
             "email_configured": bool(cls.EMAIL_SMTP_HOST and cls.EMAIL_USER),
             "sms_configured": bool(cls.TWILIO_ACCOUNT_SID and cls.TWILIO_AUTH_TOKEN),
-            "telegram_configured": bool(cls.TELEGRAM_BOT_TOKEN)
+            "telegram_configured": bool(cls.TELEGRAM_BOT_TOKEN),
         }

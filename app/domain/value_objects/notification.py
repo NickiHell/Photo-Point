@@ -1,6 +1,7 @@
 """
 Notification-related value objects.
 """
+
 from enum import Enum
 from typing import Any
 
@@ -25,6 +26,7 @@ class NotificationId(ValueObject):
 
 class NotificationType(str, Enum):
     """Types of notification channels."""
+
     EMAIL = "email"
     SMS = "sms"
     TELEGRAM = "telegram"
@@ -32,10 +34,14 @@ class NotificationType(str, Enum):
 
 class NotificationPriority(str, Enum):
     """Priority levels for notifications."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
     CRITICAL = "critical"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class MessageSubject(ValueObject):
@@ -83,9 +89,31 @@ class MessageContent(ValueObject):
 class MessageTemplate(ValueObject):
     """Message template with data for rendering."""
 
-    def __init__(self, subject: str, content: str, template_data: dict[str, Any] | None = None) -> None:
-        self._subject = MessageSubject(subject)
-        self._content = MessageContent(content)
+    def __init__(
+        self,
+        template: str | None = None,
+        subject: str | None = None,
+        content: str | None = None,
+        template_data: dict[str, Any] | None = None,
+    ) -> None:
+        # Support both old API (template) and new API (subject, content)
+        if template is not None:
+            # Old API: template contains the message content
+            if not template or not template.strip():
+                raise ValueError("Message template cannot be empty")
+            self._content = MessageContent(template)
+            self._subject = MessageSubject(
+                "Default Subject"
+            )  # Default subject for compatibility
+        else:
+            # New API: explicit subject and content
+            if not subject:
+                subject = "Default Subject"
+            if not content:
+                raise ValueError("Message content cannot be empty")
+            self._subject = MessageSubject(subject)
+            self._content = MessageContent(content)
+
         self._template_data = template_data or {}
 
     @property
@@ -97,14 +125,22 @@ class MessageTemplate(ValueObject):
         return self._content
 
     @property
+    def template(self) -> str:
+        """Compatibility property for old API."""
+        return self._content.value
+
+    @property
     def template_data(self) -> dict[str, Any]:
         return self._template_data.copy()
 
-    def render(self) -> "RenderedMessage":
+    def render(self, **kwargs) -> "RenderedMessage":
         """Render the template with data."""
+        # Merge kwargs with template_data, kwargs take precedence
+        render_data = {**self._template_data, **kwargs}
+
         try:
-            rendered_subject = self._subject.value.format(**self._template_data)
-            rendered_content = self._content.value.format(**self._template_data)
+            rendered_subject = self._subject.value.format(**render_data)
+            rendered_content = self._content.value.format(**render_data)
             return RenderedMessage(rendered_subject, rendered_content)
         except KeyError as e:
             raise ValueError(f"Missing template variable: {e}")

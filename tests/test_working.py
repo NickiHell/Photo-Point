@@ -1,6 +1,7 @@
 """
 Effective unit tests based on actual architecture to maximize coverage.
 """
+
 from unittest.mock import Mock
 
 import pytest
@@ -18,7 +19,7 @@ class TestExistingDTO:
             email="test@example.com",
             phone_number="+1234567890",
             telegram_id="telegram123",
-            preferences={"notifications": True}
+            preferences={"notifications": True},
         )
 
         assert dto.email == "test@example.com"
@@ -40,7 +41,7 @@ class TestExistingDTO:
             message_template="Hello {name}!",
             message_variables={"name": "John"},
             channels=["email"],
-            priority="HIGH"
+            priority="HIGH",
         )
 
         assert dto.recipient_id == "user123"
@@ -64,25 +65,25 @@ class TestExistingEntities:
             phone_number="+1234567890",
             telegram_id="tg123",
             preferences={"lang": "en"},
-            is_active=True
+            is_active=True,
         )
 
         # Test basic properties exist
-        assert hasattr(user, 'id') or hasattr(user, 'user_id')
-        assert hasattr(user, 'email')
-        assert hasattr(user, 'phone_number')
-        assert hasattr(user, 'telegram_id')
-        assert hasattr(user, 'preferences')
-        assert hasattr(user, 'is_active')
+        assert hasattr(user, "id") or hasattr(user, "user_id")
+        assert hasattr(user, "email")
+        assert hasattr(user, "phone_number")
+        assert hasattr(user, "telegram_id")
+        assert hasattr(user, "preferences")
+        assert hasattr(user, "is_active")
 
         # Test methods that should exist
-        if hasattr(user, 'update_email'):
+        if hasattr(user, "update_email"):
             user.update_email("new@example.com")
 
-        if hasattr(user, 'deactivate'):
+        if hasattr(user, "deactivate"):
             user.deactivate()
 
-        if hasattr(user, 'activate'):
+        if hasattr(user, "activate"):
             user.activate()
 
     def test_notification_entity_from_existing_code(self):
@@ -94,21 +95,21 @@ class TestExistingEntities:
             recipient_id="user456",
             message_template="Hello {name}!",
             channels=["email"],
-            priority="HIGH"
+            priority="HIGH",
         )
 
         # Test basic properties exist
-        assert hasattr(notification, 'id') or hasattr(notification, 'notification_id')
-        assert hasattr(notification, 'recipient_id')
-        assert hasattr(notification, 'message_template')
-        assert hasattr(notification, 'channels')
-        assert hasattr(notification, 'priority')
+        assert hasattr(notification, "id") or hasattr(notification, "notification_id")
+        assert hasattr(notification, "recipient_id")
+        assert hasattr(notification, "message_template")
+        assert hasattr(notification, "channels")
+        assert hasattr(notification, "priority")
 
         # Test methods that might exist
-        if hasattr(notification, 'mark_sent'):
+        if hasattr(notification, "mark_sent"):
             notification.mark_sent()
 
-        if hasattr(notification, 'mark_failed'):
+        if hasattr(notification, "mark_failed"):
             notification.mark_failed()
 
 
@@ -126,10 +127,7 @@ class TestUseCases:
 
         use_case = CreateUserUseCase(mock_repo)
 
-        dto = CreateUserDTO(
-            email="test@example.com",
-            preferences={"lang": "en"}
-        )
+        dto = CreateUserDTO(email="test@example.com", preferences={"lang": "en"})
 
         result = use_case.execute(dto)
 
@@ -137,8 +135,8 @@ class TestUseCases:
         mock_repo.save.assert_called_once()
 
         # Check result has expected properties
-        assert hasattr(result, 'id')
-        assert hasattr(result, 'email') or result.id == "user123"
+        assert hasattr(result, "id")
+        assert hasattr(result, "email") or result.id == "user123"
 
     def test_send_notification_use_case(self):
         """Test SendNotificationUseCase."""
@@ -151,10 +149,7 @@ class TestUseCases:
 
         use_case = SendNotificationUseCase(mock_service)
 
-        dto = SendNotificationDTO(
-            recipient_id="user123",
-            message_template="Hello!"
-        )
+        dto = SendNotificationDTO(recipient_id="user123", message_template="Hello!")
 
         result = use_case.execute(dto)
 
@@ -162,7 +157,7 @@ class TestUseCases:
         mock_service.send.assert_called_once()
 
         # Check result has expected properties
-        assert hasattr(result, 'id') or hasattr(result, 'recipient_id')
+        assert hasattr(result, "id") or hasattr(result, "recipient_id")
 
 
 class TestValueObjects:
@@ -173,15 +168,16 @@ class TestValueObjects:
         from app.domain.value_objects.user import PhoneNumber
 
         phone = PhoneNumber("+1234567890")
-        assert hasattr(phone, 'value') or str(phone) == "+1234567890"
+        assert hasattr(phone, "value") or str(phone) == "+1234567890"
 
         # Test basic equality if implemented
         phone1 = PhoneNumber("+1111111111")
         phone2 = PhoneNumber("+1111111111")
         try:
             assert phone1 == phone2
-        except:
+        except Exception as e:
             # Equality not implemented
+            print(f"PhoneNumber equality comparison failed: {e}")
             pass
 
     def test_user_id_value_object(self):
@@ -189,7 +185,7 @@ class TestValueObjects:
         from app.domain.value_objects.user import UserId
 
         user_id = UserId("user123")
-        assert hasattr(user_id, 'value') or str(user_id) == "user123"
+        assert hasattr(user_id, "value") or str(user_id) == "user123"
 
     def test_email_value_object_with_valid_domain(self):
         """Test Email value object with a domain that doesn't require DNS."""
@@ -198,7 +194,7 @@ class TestValueObjects:
         # Try with a simple format first
         try:
             email = Email("test@localhost")
-            assert hasattr(email, 'value') or str(email) == "test@localhost"
+            assert hasattr(email, "value") or str(email) == "test@localhost"
         except ValueError:
             # If validation is strict, skip this test
             pytest.skip("Email validation too strict for testing")
@@ -209,7 +205,7 @@ class TestValueObjects:
             from app.domain.value_objects.notification import NotificationId
 
             notif_id = NotificationId("notif123")
-            assert hasattr(notif_id, 'value') or str(notif_id) == "notif123"
+            assert hasattr(notif_id, "value") or str(notif_id) == "notif123"
         except ImportError:
             # NotificationId doesn't exist, skip
             pytest.skip("NotificationId not found")
@@ -219,13 +215,13 @@ class TestValueObjects:
         from app.domain.value_objects.delivery import DeliveryStatus
 
         # Test values that actually exist in code
-        assert hasattr(DeliveryStatus, 'PENDING') or hasattr(DeliveryStatus, 'pending')
+        assert hasattr(DeliveryStatus, "PENDING") or hasattr(DeliveryStatus, "pending")
 
         # Get actual enum values
-        if hasattr(DeliveryStatus, 'PENDING'):
+        if hasattr(DeliveryStatus, "PENDING"):
             assert DeliveryStatus.PENDING.value in ["PENDING", "pending"]
 
-        if hasattr(DeliveryStatus, 'SENT'):
+        if hasattr(DeliveryStatus, "SENT"):
             assert DeliveryStatus.SENT.value in ["SENT", "sent"]
 
 
@@ -245,10 +241,10 @@ class TestInfrastructureComponents:
             notif_repo = InMemoryNotificationRepository()
 
             # Test basic interface exists
-            assert hasattr(user_repo, 'save')
-            assert hasattr(user_repo, 'get_by_id')
-            assert hasattr(notif_repo, 'save')
-            assert hasattr(notif_repo, 'get_by_id')
+            assert hasattr(user_repo, "save")
+            assert hasattr(user_repo, "get_by_id")
+            assert hasattr(notif_repo, "save")
+            assert hasattr(notif_repo, "get_by_id")
 
         except ImportError:
             pytest.skip("Memory repositories not available")
@@ -257,12 +253,15 @@ class TestInfrastructureComponents:
         """Test basic configuration loading."""
         try:
             from app.infrastructure.config import get_config
+
             config = get_config()
 
             # Should return some configuration
             assert config is not None
-            assert hasattr(config, 'environment')  # Config object has environment attribute
-            assert hasattr(config, 'database')     # Config object has database attribute
+            assert hasattr(
+                config, "environment"
+            )  # Config object has environment attribute
+            assert hasattr(config, "database")  # Config object has database attribute
 
         except ImportError:
             pytest.skip("Config module not available")
@@ -278,10 +277,10 @@ class TestPresentationLayer:
         assert app is not None
 
         # Check basic app properties
-        if hasattr(app, 'title'):
+        if hasattr(app, "title"):
             assert app.title is not None
 
-        if hasattr(app, 'routes'):
+        if hasattr(app, "routes"):
             assert len(app.routes) > 0
 
     def test_dependencies_module_exists(self):
@@ -289,10 +288,10 @@ class TestPresentationLayer:
         from app.presentation import dependencies
 
         # Check if basic dependency functions exist
-        if hasattr(dependencies, 'get_user_repository'):
+        if hasattr(dependencies, "get_user_repository"):
             assert callable(dependencies.get_user_repository)
 
-        if hasattr(dependencies, 'get_notification_service'):
+        if hasattr(dependencies, "get_notification_service"):
             assert callable(dependencies.get_notification_service)
 
 
@@ -333,11 +332,11 @@ class TestRepositoryInterfaces:
         assert UserRepository is not None
 
         # Check for expected methods in interface
-        if hasattr(UserRepository, 'save'):
-            assert callable(getattr(UserRepository, 'save', None))
+        if hasattr(UserRepository, "save"):
+            assert callable(getattr(UserRepository, "save", None))
 
-        if hasattr(UserRepository, 'find_by_id'):
-            assert callable(getattr(UserRepository, 'find_by_id', None))
+        if hasattr(UserRepository, "find_by_id"):
+            assert callable(getattr(UserRepository, "find_by_id", None))
 
     def test_notification_repository_interface(self):
         """Test NotificationRepository interface exists."""
@@ -346,8 +345,8 @@ class TestRepositoryInterfaces:
         assert NotificationRepository is not None
 
         # Check for expected methods
-        if hasattr(NotificationRepository, 'save'):
-            assert callable(getattr(NotificationRepository, 'save', None))
+        if hasattr(NotificationRepository, "save"):
+            assert callable(getattr(NotificationRepository, "save", None))
 
 
 def test_simple_integration():
@@ -362,9 +361,7 @@ def test_simple_integration():
 
     # Test entity creation
     user = User(
-        user_id="integration_user",
-        email="integration@test.com",
-        is_active=True
+        user_id="integration_user", email="integration@test.com", is_active=True
     )
 
     # Basic assertion that object was created
@@ -399,7 +396,7 @@ def test_coverage_boost():
     notif_dto2 = SendNotificationDTO(
         recipient_id="user2",
         message_template="Hello {name}!",
-        message_variables={"name": "World"}
+        message_variables={"name": "World"},
     )
 
     # Basic assertions
@@ -417,7 +414,7 @@ def test_coverage_boost():
         notification_id="coverage_notif",
         recipient_id="coverage_user",
         message_template="Coverage test",
-        channels=["email"]  # Добавляем обязательный параметр channels
+        channels=["email"],  # Добавляем обязательный параметр channels
     )
 
     assert user is not None
@@ -430,23 +427,21 @@ def test_priority_values(priority):
     from app.application.dto import SendNotificationDTO
 
     dto = SendNotificationDTO(
-        recipient_id="test_user",
-        message_template="Priority test",
-        priority=priority
+        recipient_id="test_user", message_template="Priority test", priority=priority
     )
 
     assert dto.priority == priority
 
 
-@pytest.mark.parametrize("channel", [["email"], ["sms"], ["telegram"], ["email", "sms"]])
+@pytest.mark.parametrize(
+    "channel", [["email"], ["sms"], ["telegram"], ["email", "sms"]]
+)
 def test_channel_combinations(channel):
     """Test different channel combinations."""
     from app.application.dto import SendNotificationDTO
 
     dto = SendNotificationDTO(
-        recipient_id="test_user",
-        message_template="Channel test",
-        channels=channel
+        recipient_id="test_user", message_template="Channel test", channels=channel
     )
 
     assert dto.channels == channel

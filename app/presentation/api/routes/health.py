@@ -1,14 +1,15 @@
 """
 Health check endpoints.
 """
+
 from datetime import datetime
+from typing import Any
 
 try:
     from fastapi import APIRouter, Depends
     from fastapi.responses import JSONResponse
 
     router = APIRouter()
-
 
     @router.get("/")
     async def health_check():
@@ -17,9 +18,8 @@ try:
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
             "service": "notification-service",
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
-
 
     @router.get("/ready")
     async def readiness_check():
@@ -35,18 +35,14 @@ try:
             "checks": {
                 "database": "healthy",
                 "cache": "healthy",
-                "external_services": "healthy"
-            }
+                "external_services": "healthy",
+            },
         }
-
 
     @router.get("/live")
     async def liveness_check():
         """Liveness check endpoint."""
-        return {
-            "status": "alive",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        return {"status": "alive", "timestamp": datetime.utcnow().isoformat()}
 
 except ImportError:
     # Mock router for when FastAPI is not available
@@ -54,6 +50,7 @@ except ImportError:
         def get(self, path: str):
             def decorator(func):
                 return func
+
             return decorator
 
-    router = MockRouter()
+    router = MockRouter()  # type: ignore[assignment]

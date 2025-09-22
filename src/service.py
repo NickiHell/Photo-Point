@@ -16,14 +16,16 @@ logger = logging.getLogger(__name__)
 
 class DeliveryStrategy(str, Enum):
     """Стратегии доставки уведомлений."""
+
     FAIL_FAST = "fail_fast"  # Остановиться при первой ошибке
-    TRY_ALL = "try_all"      # Попробовать все доступные провайдеры
+    TRY_ALL = "try_all"  # Попробовать все доступные провайдеры
     FIRST_SUCCESS = "first_success"  # Остановиться при первом успехе
 
 
 @dataclass
 class NotificationAttempt:
     """Информация о попытке отправки уведомления."""
+
     provider: NotificationProvider
     result: NotificationResult
     attempt_number: int
@@ -33,6 +35,7 @@ class NotificationAttempt:
 @dataclass
 class DeliveryReport:
     """Отчет о доставке уведомления."""
+
     user: User
     message: NotificationMessage
     success: bool
@@ -85,7 +88,9 @@ class NotificationService:
                 validated.append(provider)
                 logger.info(f"Provider {provider.provider_name} validated successfully")
             except Exception as e:
-                logger.warning(f"Provider {provider.provider_name} validation failed: {e}")
+                logger.warning(
+                    f"Provider {provider.provider_name} validation failed: {e}"
+                )
 
         self._validated_providers = validated
         return validated
@@ -93,8 +98,7 @@ class NotificationService:
     def get_available_providers(self, user: User) -> list[NotificationProvider]:
         """Получить список провайдеров, доступных для данного пользователя."""
         return [
-            provider for provider in self.providers
-            if provider.is_user_reachable(user)
+            provider for provider in self.providers if provider.is_user_reachable(user)
         ]
 
     async def send_notification(
@@ -103,7 +107,7 @@ class NotificationService:
         message: NotificationMessage,
         strategy: DeliveryStrategy = DeliveryStrategy.FIRST_SUCCESS,
         max_retries: int = 3,
-        retry_delay: float = 1.0
+        retry_delay: float = 1.0,
     ) -> DeliveryReport:
         """
         Отправить уведомление пользователю.
@@ -132,10 +136,12 @@ class NotificationService:
                 success=False,
                 attempts=[],
                 total_attempts=0,
-                delivery_time=0.0
+                delivery_time=0.0,
             )
 
-        logger.info(f"Sending notification to user {user.id} using {len(available_providers)} providers")
+        logger.info(
+            f"Sending notification to user {user.id} using {len(available_providers)} providers"
+        )
 
         success = False
         final_result = None
@@ -149,20 +155,24 @@ class NotificationService:
                         provider=provider,
                         result=result,
                         attempt_number=attempt_num,
-                        timestamp=asyncio.get_event_loop().time()
+                        timestamp=asyncio.get_event_loop().time(),
                     )
                     attempts.append(attempt)
 
                     if result.success:
                         success = True
                         final_result = result
-                        logger.info(f"Notification sent successfully via {provider.provider_name} (attempt {attempt_num})")
+                        logger.info(
+                            f"Notification sent successfully via {provider.provider_name} (attempt {attempt_num})"
+                        )
 
                         # В зависимости от стратегии, продолжаем или останавливаемся
                         if strategy == DeliveryStrategy.FIRST_SUCCESS:
                             break
                     else:
-                        logger.warning(f"Failed to send via {provider.provider_name} (attempt {attempt_num}): {result.error}")
+                        logger.warning(
+                            f"Failed to send via {provider.provider_name} (attempt {attempt_num}): {result.error}"
+                        )
 
                         if strategy == DeliveryStrategy.FAIL_FAST:
                             break
@@ -172,19 +182,21 @@ class NotificationService:
                             await asyncio.sleep(retry_delay)
 
                 except Exception as e:
-                    logger.error(f"Unexpected error with provider {provider.provider_name}: {e}")
+                    logger.error(
+                        f"Unexpected error with provider {provider.provider_name}: {e}"
+                    )
                     error_result = NotificationResult(
                         success=False,
                         provider=NotificationType.EMAIL,  # Placeholder, будет переопределено
                         message="Unexpected error",
-                        error=str(e)
+                        error=str(e),
                     )
 
                     attempt = NotificationAttempt(
                         provider=provider,
                         result=error_result,
                         attempt_number=attempt_num,
-                        timestamp=asyncio.get_event_loop().time()
+                        timestamp=asyncio.get_event_loop().time(),
                     )
                     attempts.append(attempt)
 
@@ -196,7 +208,11 @@ class NotificationService:
                 break
 
             # Если стратегия FAIL_FAST и была ошибка
-            if strategy == DeliveryStrategy.FAIL_FAST and attempts and not attempts[-1].result.success:
+            if (
+                strategy == DeliveryStrategy.FAIL_FAST
+                and attempts
+                and not attempts[-1].result.success
+            ):
                 break
 
         end_time = asyncio.get_event_loop().time()
@@ -209,14 +225,18 @@ class NotificationService:
             attempts=attempts,
             final_result=final_result,
             total_attempts=len(attempts),
-            delivery_time=delivery_time
+            delivery_time=delivery_time,
         )
 
         # Логирование результата
         if success:
-            logger.info(f"Notification delivered successfully to user {user.id} in {delivery_time:.2f}s")
+            logger.info(
+                f"Notification delivered successfully to user {user.id} in {delivery_time:.2f}s"
+            )
         else:
-            logger.error(f"Failed to deliver notification to user {user.id} after {len(attempts)} attempts")
+            logger.error(
+                f"Failed to deliver notification to user {user.id} after {len(attempts)} attempts"
+            )
 
         return report
 
@@ -225,7 +245,7 @@ class NotificationService:
         users: list[User],
         message: NotificationMessage,
         strategy: DeliveryStrategy = DeliveryStrategy.FIRST_SUCCESS,
-        max_concurrent: int = 10
+        max_concurrent: int = 10,
     ) -> list[DeliveryReport]:
         """
         Отправить уведомления множеству пользователей параллельно.
@@ -256,7 +276,9 @@ class NotificationService:
         valid_reports = []
         for i, report in enumerate(reports):
             if isinstance(report, Exception):
-                logger.error(f"Error sending notification to user {users[i].id}: {report}")
+                logger.error(
+                    f"Error sending notification to user {users[i].id}: {report}"
+                )
                 # Создаем фиктивный отчет об ошибке
                 error_report = DeliveryReport(
                     user=users[i],
@@ -264,7 +286,7 @@ class NotificationService:
                     success=False,
                     attempts=[],
                     total_attempts=0,
-                    delivery_time=0.0
+                    delivery_time=0.0,
                 )
                 valid_reports.append(error_report)
             else:
@@ -274,7 +296,9 @@ class NotificationService:
         successful = sum(1 for report in valid_reports if report.success)
         failed = len(valid_reports) - successful
 
-        logger.info(f"Bulk notification complete: {successful} successful, {failed} failed")
+        logger.info(
+            f"Bulk notification complete: {successful} successful, {failed} failed"
+        )
 
         return valid_reports
 
@@ -288,7 +312,7 @@ class NotificationService:
             provider_info = {
                 "name": provider.provider_name,
                 "available": is_validated,
-                "error": None if is_validated else "Configuration validation failed"
+                "error": None if is_validated else "Configuration validation failed",
             }
             provider_status.append(provider_info)
 
@@ -296,5 +320,5 @@ class NotificationService:
             "service_status": "healthy" if validated_providers else "degraded",
             "total_providers": len(self.providers),
             "available_providers": len(validated_providers),
-            "providers": provider_status
+            "providers": provider_status,
         }

@@ -1,6 +1,7 @@
 """
 API integration tests using TestClient.
 """
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,15 +12,19 @@ from fastapi.testclient import TestClient
 def client():
     """Create test client for FastAPI app."""
     from app.presentation.api.main import app
+
     return TestClient(app)
 
 
 @pytest.fixture
 def mock_dependencies():
     """Mock all external dependencies."""
-    with patch('app.presentation.dependencies.get_user_repository') as mock_user_repo, \
-         patch('app.presentation.dependencies.get_notification_service') as mock_notif_service:
-
+    with (
+        patch("app.presentation.dependencies.get_user_repository") as mock_user_repo,
+        patch(
+            "app.presentation.dependencies.get_notification_service"
+        ) as mock_notif_service,
+    ):
         # Setup user repository mock
         user_repo_instance = Mock()
         user_repo_instance.save.return_value = "user_123"
@@ -27,7 +32,7 @@ def mock_dependencies():
             "id": "user_123",
             "email": "test@example.com",
             "is_active": True,
-            "created_at": "2024-01-01T00:00:00Z"
+            "created_at": "2024-01-01T00:00:00Z",
         }
         mock_user_repo.return_value = user_repo_instance
 
@@ -38,7 +43,7 @@ def mock_dependencies():
 
         yield {
             "user_repository": user_repo_instance,
-            "notification_service": notif_service_instance
+            "notification_service": notif_service_instance,
         }
 
 
@@ -77,7 +82,7 @@ class TestUserEndpoints:
             "email": "newuser@example.com",
             "phone_number": "+1234567890",
             "telegram_id": "telegram123",
-            "preferences": {"notifications": True, "lang": "en"}
+            "preferences": {"notifications": True, "lang": "en"},
         }
 
         response = client.post("/api/v1/users", json=user_data)
@@ -102,9 +107,7 @@ class TestUserEndpoints:
 
     def test_create_user_minimal_data(self, client, mock_dependencies):
         """Test user creation with minimal required data."""
-        user_data = {
-            "email": "minimal@example.com"
-        }
+        user_data = {"email": "minimal@example.com"}
 
         response = client.post("/api/v1/users", json=user_data)
 
@@ -115,9 +118,7 @@ class TestUserEndpoints:
 
     def test_create_user_invalid_email(self, client, mock_dependencies):
         """Test user creation with invalid email."""
-        user_data = {
-            "email": "invalid-email"
-        }
+        user_data = {"email": "invalid-email"}
 
         response = client.post("/api/v1/users", json=user_data)
 
@@ -144,7 +145,9 @@ class TestUserEndpoints:
         assert data["is_active"] is True
 
         # Verify repository was called
-        mock_dependencies["user_repository"].find_by_id.assert_called_once_with("user_123")
+        mock_dependencies["user_repository"].find_by_id.assert_called_once_with(
+            "user_123"
+        )
 
     def test_get_user_not_found(self, client, mock_dependencies):
         """Test user retrieval when user doesn't exist."""
@@ -167,7 +170,7 @@ class TestNotificationEndpoints:
             "message_template": "Hello {name}! Welcome to {service}.",
             "message_variables": {"name": "John", "service": "NotificationApp"},
             "channels": ["email", "sms"],
-            "priority": "HIGH"
+            "priority": "HIGH",
         }
 
         response = client.post("/api/v1/notifications/send", json=notification_data)
@@ -188,13 +191,16 @@ class TestNotificationEndpoints:
         mock_dependencies["notification_service"].send.assert_called_once()
         call_args = mock_dependencies["notification_service"].send.call_args[0][0]
         assert call_args["recipient_id"] == "user_123"
-        assert call_args["message_variables"] == {"name": "John", "service": "NotificationApp"}
+        assert call_args["message_variables"] == {
+            "name": "John",
+            "service": "NotificationApp",
+        }
 
     def test_send_notification_minimal_data(self, client, mock_dependencies):
         """Test notification sending with minimal required data."""
         notification_data = {
             "recipient_id": "user_123",
-            "message_template": "Simple message"
+            "message_template": "Simple message",
         }
 
         response = client.post("/api/v1/notifications/send", json=notification_data)
@@ -211,7 +217,7 @@ class TestNotificationEndpoints:
         notification_data = {
             "recipient_id": "user_123",
             "message_template": "Test message",
-            "priority": "INVALID_PRIORITY"
+            "priority": "INVALID_PRIORITY",
         }
 
         response = client.post("/api/v1/notifications/send", json=notification_data)
@@ -238,7 +244,7 @@ class TestNotificationEndpoints:
         """Test notification sending with empty message template."""
         notification_data = {
             "recipient_id": "user_123",
-            "message_template": ""  # Empty template
+            "message_template": "",  # Empty template
         }
 
         response = client.post("/api/v1/notifications/send", json=notification_data)
@@ -256,7 +262,7 @@ class TestErrorHandling:
         response = client.post(
             "/api/v1/users",
             data="invalid json",
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
 
         assert response.status_code == 422
@@ -264,9 +270,7 @@ class TestErrorHandling:
     def test_unsupported_media_type(self, client):
         """Test handling of unsupported media type."""
         response = client.post(
-            "/api/v1/users",
-            data="some data",
-            headers={"Content-Type": "text/plain"}
+            "/api/v1/users", data="some data", headers={"Content-Type": "text/plain"}
         )
 
         assert response.status_code == 422
@@ -281,7 +285,7 @@ class TestErrorHandling:
 
     def test_internal_server_error(self, client):
         """Test internal server error handling."""
-        with patch('app.presentation.dependencies.get_user_repository') as mock_repo:
+        with patch("app.presentation.dependencies.get_user_repository") as mock_repo:
             mock_repo.side_effect = Exception("Database connection failed")
 
             response = client.post("/api/v1/users", json={"email": "test@example.com"})
@@ -302,36 +306,42 @@ class TestRequestValidation:
 
         # Test phone number format
         invalid_phone = "not-a-phone-number"
-        response = client.post("/api/v1/users", json={
-            "email": "test@example.com",
-            "phone_number": invalid_phone
-        })
+        response = client.post(
+            "/api/v1/users",
+            json={"email": "test@example.com", "phone_number": invalid_phone},
+        )
         # Should be handled by validation
 
         # Test preferences type
         invalid_preferences = "not a dict"
-        response = client.post("/api/v1/users", json={
-            "email": "test@example.com",
-            "preferences": invalid_preferences
-        })
+        response = client.post(
+            "/api/v1/users",
+            json={"email": "test@example.com", "preferences": invalid_preferences},
+        )
         assert response.status_code == 422
 
     def test_notification_field_validation(self, client, mock_dependencies):
         """Test notification field validation."""
         # Test invalid channels
-        response = client.post("/api/v1/notifications/send", json={
-            "recipient_id": "user123",
-            "message_template": "Test",
-            "channels": ["invalid_channel"]
-        })
+        response = client.post(
+            "/api/v1/notifications/send",
+            json={
+                "recipient_id": "user123",
+                "message_template": "Test",
+                "channels": ["invalid_channel"],
+            },
+        )
         # May or may not be validation error depending on implementation
 
         # Test message variables type
-        response = client.post("/api/v1/notifications/send", json={
-            "recipient_id": "user123",
-            "message_template": "Test {var}",
-            "message_variables": "not a dict"
-        })
+        response = client.post(
+            "/api/v1/notifications/send",
+            json={
+                "recipient_id": "user123",
+                "message_template": "Test {var}",
+                "message_variables": "not a dict",
+            },
+        )
         assert response.status_code == 422
 
 
@@ -343,14 +353,16 @@ class TestConcurrency:
         import concurrent.futures
 
         def create_user(index):
-            return client.post("/api/v1/users", json={
-                "email": f"user{index}@example.com"
-            })
+            return client.post(
+                "/api/v1/users", json={"email": f"user{index}@example.com"}
+            )
 
         # Send multiple requests concurrently
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(create_user, i) for i in range(5)]
-            responses = [future.result() for future in concurrent.futures.as_completed(futures)]
+            responses = [
+                future.result() for future in concurrent.futures.as_completed(futures)
+            ]
 
         # All should succeed
         for response in responses:

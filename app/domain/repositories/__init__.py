@@ -1,9 +1,6 @@
-"""
-Repository interfaces for the domain layer.
-"""
+"""Repository interfaces for domain objects."""
+
 from abc import ABC, abstractmethod
-from typing import List, Optional
-from uuid import UUID
 
 from ..entities.delivery import Delivery
 from ..entities.notification import Notification
@@ -80,7 +77,9 @@ class DeliveryRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_notification(self, notification_id: NotificationId) -> list[Delivery]:
+    async def get_by_notification(
+        self, notification_id: NotificationId
+    ) -> list[Delivery]:
         """Get deliveries for specific notification."""
         pass
 

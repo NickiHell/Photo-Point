@@ -1,6 +1,7 @@
 """
 Comprehensive tests for all Domain Entities to maximize coverage.
 """
+
 from datetime import UTC, datetime, timedelta
 
 
@@ -49,7 +50,7 @@ class TestUserEntity:
             email=email,
             phone=phone,
             telegram_chat_id=telegram_id,
-            is_active=False
+            is_active=False,
         )
 
         assert user.id == user_id
@@ -192,7 +193,7 @@ class TestUserEntity:
             name=name,
             email=email,
             phone=phone,
-            telegram_chat_id=telegram_id
+            telegram_chat_id=telegram_id,
         )
 
         channels = user.get_available_channels()
@@ -260,7 +261,7 @@ class TestNotificationEntity:
         notification = Notification(
             notification_id=notification_id,
             recipient_id=recipient_id,
-            message_template=template
+            message_template=template,
         )
 
         assert notification.id == notification_id
@@ -297,7 +298,7 @@ class TestNotificationEntity:
             priority=priority,
             scheduled_at=scheduled_at,
             expires_at=expires_at,
-            metadata=metadata
+            metadata=metadata,
         )
 
         assert notification.id == notification_id
@@ -324,7 +325,7 @@ class TestNotificationEntity:
         notification = Notification(
             notification_id=notification_id,
             recipient_id=recipient_id,
-            message_template=template
+            message_template=template,
         )
 
         rendered = notification.render_message(name="John", platform="MyApp")
@@ -350,7 +351,7 @@ class TestNotificationEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             message_template=template,
-            scheduled_at=future_time
+            scheduled_at=future_time,
         )
         assert future_notification.is_ready_to_send() is False
 
@@ -360,7 +361,7 @@ class TestNotificationEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             message_template=template,
-            scheduled_at=past_time
+            scheduled_at=past_time,
         )
         assert past_notification.is_ready_to_send() is True
 
@@ -385,7 +386,7 @@ class TestNotificationEntity:
         no_expiry = Notification(
             notification_id=notification_id,
             recipient_id=recipient_id,
-            message_template=template
+            message_template=template,
         )
         assert no_expiry.is_expired() is False
 
@@ -395,7 +396,7 @@ class TestNotificationEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             message_template=template,
-            expires_at=future_expiry
+            expires_at=future_expiry,
         )
         assert future_notification.is_expired() is False
 
@@ -405,7 +406,7 @@ class TestNotificationEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             message_template=template,
-            expires_at=past_expiry
+            expires_at=past_expiry,
         )
         assert past_notification.is_expired() is True
 
@@ -425,7 +426,7 @@ class TestNotificationEntity:
         notification = Notification(
             notification_id=notification_id,
             recipient_id=recipient_id,
-            message_template=template
+            message_template=template,
         )
 
         assert notification.is_cancelled is False
@@ -449,7 +450,7 @@ class TestNotificationEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             message_template=template,
-            metadata={"key1": "value1"}
+            metadata={"key1": "value1"},
         )
 
         # Update existing key
@@ -481,7 +482,7 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         assert delivery.id == delivery_id
@@ -511,14 +512,14 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         # Successful attempt
         delivery.add_attempt(
             success=True,
             response="Email sent successfully",
-            provider_message_id="msg-123"
+            provider_message_id="msg-123",
         )
 
         assert delivery.status == DeliveryStatus.SENT
@@ -548,16 +549,12 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         # Failed attempt
         error = DeliveryError("TIMEOUT", "Connection timeout")
-        delivery.add_attempt(
-            success=False,
-            response="Failed to send",
-            error=error
-        )
+        delivery.add_attempt(success=False, response="Failed to send", error=error)
 
         assert delivery.status == DeliveryStatus.FAILED
         assert len(delivery.attempts) == 1
@@ -585,7 +582,7 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         # First attempt fails
@@ -599,7 +596,9 @@ class TestDeliveryEntity:
         assert delivery.status == DeliveryStatus.RETRYING
 
         # Second attempt succeeds
-        delivery.add_attempt(success=True, response="Success", provider_message_id="msg-456")
+        delivery.add_attempt(
+            success=True, response="Success", provider_message_id="msg-456"
+        )
         assert delivery.status == DeliveryStatus.SENT
         assert len(delivery.attempts) == 2
         assert delivery.attempts[1].success is True
@@ -620,7 +619,7 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         # First mark as sent
@@ -648,7 +647,7 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         # No attempts yet
@@ -679,7 +678,7 @@ class TestDeliveryEntity:
             notification_id=notification_id,
             recipient_id=recipient_id,
             channel="email",
-            provider="smtp"
+            provider="smtp",
         )
 
         # PENDING is not final
@@ -708,7 +707,9 @@ def test_all_entities_import():
     user = User(user_id, UserName("Test"), Email("test@gmail.com"))
 
     notif_id = NotificationId("test")
-    notification = Notification(notif_id, user_id, MessageTemplate("subject", "content"))
+    notification = Notification(
+        notif_id, user_id, MessageTemplate("subject", "content")
+    )
 
     delivery_id = DeliveryId("test")
     delivery = Delivery(delivery_id, notif_id, user_id, "email", "smtp")

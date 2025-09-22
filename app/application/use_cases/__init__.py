@@ -1,6 +1,6 @@
 """Use Cases for the application layer."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Protocol
 
 from ..dto import (
@@ -51,12 +51,19 @@ class CreateUserUseCase:
             "phone_number": request.phone_number,
             "telegram_id": request.telegram_id,
             "is_active": True,
-            "preferences": request.preferences,
-            "created_at": datetime.now()
+            "preferences": request.preferences or {},
+            "created_at": datetime.now(UTC),
         }
 
         user_id = self.user_repository.save(user_data)
         user_data["id"] = user_id
+
+        # Ensure created_at is a datetime object
+        created_at_value = user_data.get("created_at")
+        if isinstance(created_at_value, datetime):
+            created_at = created_at_value
+        else:
+            created_at = datetime.now(UTC)
 
         return UserResponseDTO(
             id=user_id,
@@ -64,8 +71,8 @@ class CreateUserUseCase:
             phone_number=request.phone_number,
             telegram_id=request.telegram_id,
             is_active=True,
-            preferences=request.preferences,
-            created_at=user_data["created_at"]
+            preferences=request.preferences or {},
+            created_at=created_at,
         )
 
 
@@ -83,22 +90,34 @@ class SendNotificationUseCase:
             "message_variables": request.message_variables,
             "channels": request.channels,
             "priority": request.priority,
-            "scheduled_at": request.scheduled_at or datetime.now(),
-            "retry_policy": request.retry_policy,
+            "scheduled_at": request.scheduled_at,
             "metadata": request.metadata,
-            "created_at": datetime.now(),
-            "status": "PENDING"
+            "created_at": datetime.now(UTC),
+            "status": "PENDING",
         }
 
         notification_id = self.notification_service.send(notification_data)
+
+        # Ensure datetime fields are proper datetime objects
+        scheduled_at_value = notification_data.get("scheduled_at")
+        if isinstance(scheduled_at_value, datetime):
+            scheduled_at = scheduled_at_value
+        else:
+            scheduled_at = datetime.now(UTC)
+
+        created_at_value = notification_data.get("created_at")
+        if isinstance(created_at_value, datetime):
+            created_at = created_at_value
+        else:
+            created_at = datetime.now(UTC)
 
         return NotificationResponseDTO(
             id=notification_id,
             recipient_id=request.recipient_id,
             message_template=request.message_template,
-            channels=request.channels,
+            channels=request.channels or [],
             priority=request.priority,
-            scheduled_at=notification_data["scheduled_at"],
-            created_at=notification_data["created_at"],
-            status="PENDING"
+            scheduled_at=scheduled_at,
+            created_at=created_at,
+            status="PENDING",
         )

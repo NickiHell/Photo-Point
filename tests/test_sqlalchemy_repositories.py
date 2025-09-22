@@ -3,6 +3,7 @@ Comprehensive tests for SQLAlchemy repository implementations.
 These tests target 142 lines of sqlalchemy_repositories.py (currently 0% coverage)
 to provide significant coverage boost toward 90% goal.
 """
+
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
@@ -51,7 +52,7 @@ class TestSQLAlchemyUserRepository:
             telegram_id="123456789",
             is_active=True,
             preferences={"theme": "dark"},
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
     @pytest.fixture
@@ -63,7 +64,7 @@ class TestSQLAlchemyUserRepository:
             telegram_id=TelegramChatId("123456789"),
             is_active=True,
             preferences={"theme": "dark"},
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
     def test_model_to_entity_conversion(self, user_repository, sample_user_model):
@@ -87,7 +88,7 @@ class TestSQLAlchemyUserRepository:
             telegram_id=None,
             is_active=False,
             preferences=None,
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
         entity = user_repository._model_to_entity(model)
@@ -120,7 +121,7 @@ class TestSQLAlchemyUserRepository:
             telegram_id=None,
             is_active=False,
             preferences={"setting": "value"},
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
         model = user_repository._entity_to_model(entity)
@@ -132,7 +133,9 @@ class TestSQLAlchemyUserRepository:
         assert model.is_active is False
         assert model.preferences == {"setting": "value"}
 
-    async def test_save_new_user(self, user_repository, sample_user_entity, mock_session):
+    async def test_save_new_user(
+        self, user_repository, sample_user_entity, mock_session
+    ):
         """Test saving new user entity"""
         # Mock no existing user found
         mock_result = MagicMock()
@@ -146,7 +149,9 @@ class TestSQLAlchemyUserRepository:
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
 
-    async def test_save_existing_user(self, user_repository, sample_user_entity, sample_user_model, mock_session):
+    async def test_save_existing_user(
+        self, user_repository, sample_user_entity, sample_user_model, mock_session
+    ):
         """Test updating existing user entity"""
         # Mock existing user found
         mock_result = MagicMock()
@@ -160,7 +165,9 @@ class TestSQLAlchemyUserRepository:
         assert sample_user_model.is_active is True
         mock_session.commit.assert_called_once()
 
-    async def test_get_by_id_found(self, user_repository, sample_user_model, mock_session):
+    async def test_get_by_id_found(
+        self, user_repository, sample_user_model, mock_session
+    ):
         """Test getting user by ID when user exists"""
         # Mock user found
         mock_result = MagicMock()
@@ -188,8 +195,18 @@ class TestSQLAlchemyUserRepository:
         """Test getting all active users"""
         # Mock multiple users found
         mock_users = [
-            UserModel(id="user-1", email="user1@test.com", is_active=True, created_at=datetime.now()),
-            UserModel(id="user-2", email="user2@test.com", is_active=True, created_at=datetime.now())
+            UserModel(
+                id="user-1",
+                email="user1@test.com",
+                is_active=True,
+                created_at=datetime.now(),
+            ),
+            UserModel(
+                id="user-2",
+                email="user2@test.com",
+                is_active=True,
+                created_at=datetime.now(),
+            ),
         ]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_users
@@ -231,7 +248,7 @@ class TestSQLAlchemyNotificationRepository:
             scheduled_at=datetime(2025, 1, 1, 12, 0),
             retry_policy={"max_attempts": 3},
             metadata={"source": "api"},
-            created_at=datetime(2025, 1, 1, 10, 0)
+            created_at=datetime(2025, 1, 1, 10, 0),
         )
 
     @pytest.fixture
@@ -245,10 +262,12 @@ class TestSQLAlchemyNotificationRepository:
             scheduled_at=datetime(2025, 1, 1, 12, 0),
             retry_policy={"max_attempts": 3},
             metadata={"source": "api"},
-            created_at=datetime(2025, 1, 1, 10, 0)
+            created_at=datetime(2025, 1, 1, 10, 0),
         )
 
-    def test_notification_model_to_entity(self, notification_repository, sample_notification_model):
+    def test_notification_model_to_entity(
+        self, notification_repository, sample_notification_model
+    ):
         """Test converting NotificationModel to Notification entity"""
         entity = notification_repository._model_to_entity(sample_notification_model)
 
@@ -260,7 +279,9 @@ class TestSQLAlchemyNotificationRepository:
         assert entity.priority == NotificationPriority.HIGH
         assert entity.retry_policy == {"max_attempts": 3}
 
-    def test_notification_entity_to_model(self, notification_repository, sample_notification_entity):
+    def test_notification_entity_to_model(
+        self, notification_repository, sample_notification_entity
+    ):
         """Test converting Notification entity to NotificationModel"""
         model = notification_repository._entity_to_model(sample_notification_entity)
 
@@ -271,7 +292,9 @@ class TestSQLAlchemyNotificationRepository:
         assert model.priority == "HIGH"
         assert model.channels == ["email", "sms"]
 
-    async def test_save_new_notification(self, notification_repository, sample_notification_entity, mock_session):
+    async def test_save_new_notification(
+        self, notification_repository, sample_notification_entity, mock_session
+    ):
         """Test saving new notification"""
         # Mock no existing notification
         mock_result = MagicMock()
@@ -283,7 +306,13 @@ class TestSQLAlchemyNotificationRepository:
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
 
-    async def test_save_existing_notification(self, notification_repository, sample_notification_entity, sample_notification_model, mock_session):
+    async def test_save_existing_notification(
+        self,
+        notification_repository,
+        sample_notification_entity,
+        sample_notification_model,
+        mock_session,
+    ):
         """Test updating existing notification"""
         # Mock existing notification found
         mock_result = MagicMock()
@@ -297,13 +326,17 @@ class TestSQLAlchemyNotificationRepository:
         assert sample_notification_model.priority == "HIGH"
         mock_session.commit.assert_called_once()
 
-    async def test_get_by_id_found(self, notification_repository, sample_notification_model, mock_session):
+    async def test_get_by_id_found(
+        self, notification_repository, sample_notification_model, mock_session
+    ):
         """Test getting notification by ID"""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_notification_model
         mock_session.execute.return_value = mock_result
 
-        notification = await notification_repository.get_by_id(NotificationId("notif-123"))
+        notification = await notification_repository.get_by_id(
+            NotificationId("notif-123")
+        )
 
         assert notification is not None
         assert notification.id.value == "notif-123"
@@ -314,19 +347,35 @@ class TestSQLAlchemyNotificationRepository:
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
 
-        notification = await notification_repository.get_by_id(NotificationId("nonexistent"))
+        notification = await notification_repository.get_by_id(
+            NotificationId("nonexistent")
+        )
 
         assert notification is None
 
-    async def test_get_pending_notifications(self, notification_repository, mock_session):
+    async def test_get_pending_notifications(
+        self, notification_repository, mock_session
+    ):
         """Test getting pending notifications"""
         mock_notifications = [
-            NotificationModel(id="n1", recipient_id="u1", message_template="Test",
-                            channels=["email"], priority="MEDIUM",
-                            scheduled_at=datetime.now(), created_at=datetime.now()),
-            NotificationModel(id="n2", recipient_id="u2", message_template="Test2",
-                            channels=["sms"], priority="LOW",
-                            scheduled_at=datetime.now(), created_at=datetime.now())
+            NotificationModel(
+                id="n1",
+                recipient_id="u1",
+                message_template="Test",
+                channels=["email"],
+                priority="MEDIUM",
+                scheduled_at=datetime.now(),
+                created_at=datetime.now(),
+            ),
+            NotificationModel(
+                id="n2",
+                recipient_id="u2",
+                message_template="Test2",
+                channels=["sms"],
+                priority="LOW",
+                scheduled_at=datetime.now(),
+                created_at=datetime.now(),
+            ),
         ]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_notifications
@@ -340,15 +389,23 @@ class TestSQLAlchemyNotificationRepository:
     async def test_get_by_recipient(self, notification_repository, mock_session):
         """Test getting notifications by recipient ID"""
         mock_notifications = [
-            NotificationModel(id="n1", recipient_id="user-123", message_template="Test",
-                            channels=["email"], priority="HIGH",
-                            scheduled_at=datetime.now(), created_at=datetime.now())
+            NotificationModel(
+                id="n1",
+                recipient_id="user-123",
+                message_template="Test",
+                channels=["email"],
+                priority="HIGH",
+                scheduled_at=datetime.now(),
+                created_at=datetime.now(),
+            )
         ]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_notifications
         mock_session.execute.return_value = mock_result
 
-        notifications = await notification_repository.get_by_recipient(UserId("user-123"))
+        notifications = await notification_repository.get_by_recipient(
+            UserId("user-123")
+        )
 
         assert len(notifications) == 1
         assert notifications[0].recipient_id.value == "user-123"
@@ -385,7 +442,7 @@ class TestSQLAlchemyDeliveryRepository:
             scheduled_at=datetime(2025, 1, 1),
             retry_policy={"max_attempts": 2},
             metadata={"test": "data"},
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
         # Create delivery model
@@ -396,7 +453,7 @@ class TestSQLAlchemyDeliveryRepository:
             provider="smtp",
             status="PENDING",
             created_at=datetime(2025, 1, 1),
-            completed_at=None
+            completed_at=None,
         )
 
         # Set relationships
@@ -405,9 +462,13 @@ class TestSQLAlchemyDeliveryRepository:
 
         return delivery_model
 
-    def test_delivery_model_to_entity(self, delivery_repository, sample_delivery_model_with_notification):
+    def test_delivery_model_to_entity(
+        self, delivery_repository, sample_delivery_model_with_notification
+    ):
         """Test converting DeliveryModel to Delivery entity"""
-        entity = delivery_repository._model_to_entity(sample_delivery_model_with_notification)
+        entity = delivery_repository._model_to_entity(
+            sample_delivery_model_with_notification
+        )
 
         assert entity.id.value == "delivery-123"
         assert entity.notification.id.value == "notif-123"
@@ -432,7 +493,7 @@ class TestSQLAlchemyDeliveryRepository:
             scheduled_at=datetime(2025, 1, 1),
             retry_policy={},
             metadata={},
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
         delivery = Delivery(
@@ -441,7 +502,7 @@ class TestSQLAlchemyDeliveryRepository:
             channel="email",
             provider="smtp",
             status=DeliveryStatus.PENDING,
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
         await delivery_repository.save(delivery)
@@ -449,11 +510,15 @@ class TestSQLAlchemyDeliveryRepository:
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
 
-    async def test_save_existing_delivery(self, delivery_repository, sample_delivery_model_with_notification, mock_session):
+    async def test_save_existing_delivery(
+        self, delivery_repository, sample_delivery_model_with_notification, mock_session
+    ):
         """Test updating existing delivery"""
         # Mock existing delivery found
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sample_delivery_model_with_notification
+        mock_result.scalar_one_or_none.return_value = (
+            sample_delivery_model_with_notification
+        )
         mock_session.execute.return_value = mock_result
 
         # Create delivery entity for update
@@ -466,7 +531,7 @@ class TestSQLAlchemyDeliveryRepository:
             scheduled_at=datetime(2025, 1, 1),
             retry_policy={},
             metadata={},
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
 
         delivery = Delivery(
@@ -475,7 +540,7 @@ class TestSQLAlchemyDeliveryRepository:
             channel="email",
             provider="smtp",
             status=DeliveryStatus.DELIVERED,
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
         delivery._completed_at = datetime(2025, 1, 1, 12, 0)
 
@@ -485,10 +550,14 @@ class TestSQLAlchemyDeliveryRepository:
         assert sample_delivery_model_with_notification.status == "DELIVERED"
         mock_session.commit.assert_called_once()
 
-    async def test_get_by_id_found(self, delivery_repository, sample_delivery_model_with_notification, mock_session):
+    async def test_get_by_id_found(
+        self, delivery_repository, sample_delivery_model_with_notification, mock_session
+    ):
         """Test getting delivery by ID"""
         mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = sample_delivery_model_with_notification
+        mock_result.scalar_one_or_none.return_value = (
+            sample_delivery_model_with_notification
+        )
         mock_session.execute.return_value = mock_result
 
         delivery = await delivery_repository.get_by_id(DeliveryId("delivery-123"))
@@ -507,13 +576,19 @@ class TestSQLAlchemyDeliveryRepository:
 
         assert delivery is None
 
-    async def test_get_by_notification(self, delivery_repository, sample_delivery_model_with_notification, mock_session):
+    async def test_get_by_notification(
+        self, delivery_repository, sample_delivery_model_with_notification, mock_session
+    ):
         """Test getting deliveries by notification ID"""
         mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [sample_delivery_model_with_notification]
+        mock_result.scalars.return_value.all.return_value = [
+            sample_delivery_model_with_notification
+        ]
         mock_session.execute.return_value = mock_result
 
-        deliveries = await delivery_repository.get_by_notification(NotificationId("notif-123"))
+        deliveries = await delivery_repository.get_by_notification(
+            NotificationId("notif-123")
+        )
 
         assert len(deliveries) == 1
         assert deliveries[0].notification.id.value == "notif-123"
@@ -526,11 +601,16 @@ class TestSQLAlchemyDeliveryRepository:
             channel="sms",
             provider="twilio",
             status="RETRYING",
-            created_at=datetime(2025, 1, 1)
+            created_at=datetime(2025, 1, 1),
         )
         retry_delivery.notification = NotificationModel(
-            id="notif-123", recipient_id="user-123", message_template="Test",
-            channels=["sms"], priority="HIGH", scheduled_at=datetime.now(), created_at=datetime.now()
+            id="notif-123",
+            recipient_id="user-123",
+            message_template="Test",
+            channels=["sms"],
+            priority="HIGH",
+            scheduled_at=datetime.now(),
+            created_at=datetime.now(),
         )
         retry_delivery.attempts = []
 
@@ -547,14 +627,38 @@ class TestSQLAlchemyDeliveryRepository:
         """Test getting delivery statistics"""
         # Mock delivery models with various statuses
         mock_deliveries = [
-            DeliveryModel(id="d1", notification_id="n1", channel="email", provider="smtp",
-                         status="DELIVERED", created_at=datetime.now()),
-            DeliveryModel(id="d2", notification_id="n2", channel="sms", provider="twilio",
-                         status="FAILED", created_at=datetime.now()),
-            DeliveryModel(id="d3", notification_id="n3", channel="email", provider="smtp",
-                         status="PENDING", created_at=datetime.now()),
-            DeliveryModel(id="d4", notification_id="n4", channel="email", provider="smtp",
-                         status="DELIVERED", created_at=datetime.now())
+            DeliveryModel(
+                id="d1",
+                notification_id="n1",
+                channel="email",
+                provider="smtp",
+                status="DELIVERED",
+                created_at=datetime.now(),
+            ),
+            DeliveryModel(
+                id="d2",
+                notification_id="n2",
+                channel="sms",
+                provider="twilio",
+                status="FAILED",
+                created_at=datetime.now(),
+            ),
+            DeliveryModel(
+                id="d3",
+                notification_id="n3",
+                channel="email",
+                provider="smtp",
+                status="PENDING",
+                created_at=datetime.now(),
+            ),
+            DeliveryModel(
+                id="d4",
+                notification_id="n4",
+                channel="email",
+                provider="smtp",
+                status="DELIVERED",
+                created_at=datetime.now(),
+            ),
         ]
 
         mock_result = MagicMock()
@@ -604,7 +708,7 @@ class TestSQLAlchemyRepositoriesIntegration:
             email=Email("test@example.com"),
             is_active=True,
             preferences={},
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
         notification_entity = Notification(
@@ -616,7 +720,7 @@ class TestSQLAlchemyRepositoriesIntegration:
             scheduled_at=datetime.now(),
             retry_policy={},
             metadata={},
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
 
         # Mock no existing entities

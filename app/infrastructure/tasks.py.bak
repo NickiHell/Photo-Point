@@ -1,0 +1,472 @@
+"""
+Celery tasks for notification processing.
+"""
+import asyncio
+import uuid
+from datetime import datetime
+from typing import Dict, Any, List
+
+from celery import Task
+from celery.exceptions import Retry
+from structlog import get_logger
+
+from .celery_config import celery_app
+from ...presentation.dependencies import get_container
+from ...domain.value_objects.user import UserId
+from ...domain.value_objects.notification import NotificationId
+from ...domain.value_objects.delivery import DeliveryId, DeliveryStrategy
+from ...domain.entities.notification import Notification
+from ...domain.entities.delivery import Delivery
+from ...application.dto import SendNotificationRequest, BulkNotificationRequest, OperationResponse
+
+logger = get_logger()
+
+
+class CallbackTask(Task):
+    """Base task class with better error handling and logging."""
+    
+    def on_success(self, retval, task_id, args, kwargs):
+        """Called when task succeeds."""
+        logger.info("Task succeeded", task_id=task_id, result=retval)
+    
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """Called when task fails."""
+        logger.error(
+            "Task failed",
+            task_id=task_id,
+            error=str(exc),
+            args=args,
+            kwargs=kwargs,
+            traceback=einfo.traceback
+        )
+    
+    def on_retry(self, exc, task_id, args, kwargs, einfo):
+        """Called when task is retried."""
+        logger.warning(
+            "Task retried",
+            task_id=task_id,
+            error=str(exc),
+            retry_count=self.request.retries
+        )
+
+
+@celery_app.task(
+    bind=True,
+    base=CallbackTask,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_kwargs={"max_retries": 3, "countdown": 60},
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    name="app.infrastructure.tasks.send_notification_task"
+)
+def send_notification_task(
+    self,
+    recipient_id: str,
+    subject: str,
+    content: str,
+    template_data: Dict[str, Any] = None,
+    priority: str = "normal",
+    strategy: str = "first_success",
+    scheduled_at: str = None,
+    expires_at: str = None
+) -> Dict[str, Any]:
+    """
+    Celery task for sending a single notification.
+    
+    Args:
+        recipient_id: User ID to send notification to
+        subject: Notification subject
+        content: Notification content
+        template_data: Template variables
+        priority: Notification priority (low, normal, high, urgent)
+        strategy: Delivery strategy (first_success, try_all, fail_fast)
+        scheduled_at: Optional scheduled delivery time (ISO format)
+        expires_at: Optional expiration time (ISO format)
+        
+    Returns:
+        Dict containing delivery result
+    """
+    logger.info(
+        "Processing notification task",
+        task_id=self.request.id,
+        recipient_id=recipient_id,
+        subject=subject,
+        priority=priority,
+        strategy=strategy
+    )
+    
+    try:
+        # Convert to async context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(
+                _process_single_notification(
+                    recipient_id=recipient_id,
+                    subject=subject,
+                    content=content,
+                    template_data=template_data or {},
+                    priority=priority,
+                    strategy=strategy,
+                    scheduled_at=scheduled_at,
+                    expires_at=expires_at
+                )
+            )
+            return result
+        finally:
+            loop.close()
+            
+    except Exception as exc:
+        logger.error(
+            "Notification task failed",
+            task_id=self.request.id,
+            recipient_id=recipient_id,
+            error=str(exc)
+        )
+        
+        # Retry if it's a recoverable error
+        if isinstance(exc, (ConnectionError, TimeoutError)):
+            logger.warning(
+                "Retrying notification task",
+                task_id=self.request.id,
+                retry_count=self.request.retries
+            )
+            raise self.retry(exc=exc)
+        
+        # For other errors, return failure result
+        return {
+            "success": False,
+            "message": f"Task failed: {str(exc)}",
+            "task_id": self.request.id,
+            "recipient_id": recipient_id,
+            "error": str(exc)
+        }
+
+
+@celery_app.task(
+    bind=True,
+    base=CallbackTask,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_kwargs={"max_retries": 2, "countdown": 120},
+    retry_backoff=True,
+    retry_backoff_max=1200,
+    retry_jitter=True,
+    name="app.infrastructure.tasks.send_bulk_notification_task"
+)
+def send_bulk_notification_task(
+    self,
+    recipient_ids: List[str],
+    subject: str,
+    content: str,
+    template_data: Dict[str, Any] = None,
+    priority: str = "normal",
+    strategy: str = "first_success",
+    max_concurrent: int = 10
+) -> Dict[str, Any]:
+    """
+    Celery task for sending bulk notifications.
+    
+    This task will spawn individual notification tasks for better parallelism
+    and error isolation.
+    
+    Args:
+        recipient_ids: List of user IDs
+        subject: Notification subject
+        content: Notification content  
+        template_data: Template variables
+        priority: Notification priority
+        strategy: Delivery strategy
+        max_concurrent: Maximum concurrent tasks
+        
+    Returns:
+        Dict containing bulk delivery results
+    """
+    logger.info(
+        "Processing bulk notification task",
+        task_id=self.request.id,
+        recipient_count=len(recipient_ids),
+        subject=subject,
+        priority=priority,
+        max_concurrent=max_concurrent
+    )
+    
+    try:
+        # Create individual tasks for each recipient
+        task_results = []
+        
+        # Process in batches to control concurrency
+        batch_size = min(max_concurrent, len(recipient_ids))
+        
+        for i in range(0, len(recipient_ids), batch_size):
+            batch = recipient_ids[i:i + batch_size]
+            
+            # Submit tasks for this batch
+            batch_tasks = []
+            for recipient_id in batch:
+                # Add recipient-specific template data
+                recipient_template_data = {
+                    **(template_data or {}),
+                    "user_id": recipient_id
+                }
+                
+                task_result = send_notification_task.delay(
+                    recipient_id=recipient_id,
+                    subject=subject,
+                    content=content,
+                    template_data=recipient_template_data,
+                    priority=priority,
+                    strategy=strategy
+                )
+                batch_tasks.append({
+                    "task_id": task_result.id,
+                    "recipient_id": recipient_id
+                })
+            
+            task_results.extend(batch_tasks)
+        
+        logger.info(
+            "Bulk notification tasks submitted",
+            task_id=self.request.id,
+            submitted_tasks=len(task_results)
+        )
+        
+        return {
+            "success": True,
+            "message": f"Bulk notification spawned {len(task_results)} tasks",
+            "task_id": self.request.id,
+            "recipient_count": len(recipient_ids),
+            "spawned_tasks": task_results
+        }
+        
+    except Exception as exc:
+        logger.error(
+            "Bulk notification task failed",
+            task_id=self.request.id,
+            recipient_count=len(recipient_ids),
+            error=str(exc)
+        )
+        
+        if isinstance(exc, (ConnectionError, TimeoutError)):
+            raise self.retry(exc=exc)
+        
+        return {
+            "success": False,
+            "message": f"Bulk task failed: {str(exc)}",
+            "task_id": self.request.id,
+            "recipient_count": len(recipient_ids),
+            "error": str(exc)
+        }
+
+
+@celery_app.task(
+    bind=True,
+    base=CallbackTask,
+    name="app.infrastructure.tasks.retry_failed_notification_task"
+)
+def retry_failed_notification_task(self, original_task_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Retry a failed notification with exponential backoff.
+    
+    Args:
+        original_task_data: Original task parameters
+        
+    Returns:
+        Dict containing retry result
+    """
+    logger.info(
+        "Retrying failed notification",
+        task_id=self.request.id,
+        original_data=original_task_data
+    )
+    
+    try:
+        # Re-submit as new task
+        task_result = send_notification_task.delay(**original_task_data)
+        
+        return {
+            "success": True,
+            "message": "Retry task submitted",
+            "task_id": self.request.id,
+            "retry_task_id": task_result.id
+        }
+        
+    except Exception as exc:
+        logger.error(
+            "Failed to retry notification",
+            task_id=self.request.id,
+            error=str(exc)
+        )
+        
+        return {
+            "success": False,
+            "message": f"Retry failed: {str(exc)}",
+            "task_id": self.request.id,
+            "error": str(exc)
+        }
+
+
+@celery_app.task(
+    bind=True,
+    base=CallbackTask,
+    name="app.infrastructure.tasks.cleanup_expired_notifications_task"
+)
+def cleanup_expired_notifications_task(self) -> Dict[str, Any]:
+    """
+    Periodic task to cleanup expired notifications.
+    
+    Returns:
+        Dict containing cleanup results
+    """
+    logger.info("Starting expired notifications cleanup", task_id=self.request.id)
+    
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(_cleanup_expired_notifications())
+            return result
+        finally:
+            loop.close()
+            
+    except Exception as exc:
+        logger.error(
+            "Cleanup task failed",
+            task_id=self.request.id,
+            error=str(exc)
+        )
+        
+        return {
+            "success": False,
+            "message": f"Cleanup failed: {str(exc)}",
+            "task_id": self.request.id,
+            "error": str(exc)
+        }
+
+
+@celery_app.task(
+    bind=True,
+    base=CallbackTask,
+    name="app.infrastructure.tasks.retry_failed_notifications_task"
+)
+def retry_failed_notifications_task(self) -> Dict[str, Any]:
+    """
+    Periodic task to retry failed notifications.
+    
+    Returns:
+        Dict containing retry results
+    """
+    logger.info("Starting failed notifications retry", task_id=self.request.id)
+    
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            result = loop.run_until_complete(_retry_failed_notifications())
+            return result
+        finally:
+            loop.close()
+            
+    except Exception as exc:
+        logger.error(
+            "Retry failed notifications task failed",
+            task_id=self.request.id,
+            error=str(exc)
+        )
+        
+        return {
+            "success": False,
+            "message": f"Retry task failed: {str(exc)}",
+            "task_id": self.request.id,
+            "error": str(exc)
+        }
+
+
+# Async helper functions
+
+async def _process_single_notification(
+    recipient_id: str,
+    subject: str,
+    content: str,
+    template_data: Dict[str, Any],
+    priority: str,
+    strategy: str,
+    scheduled_at: str = None,
+    expires_at: str = None
+) -> Dict[str, Any]:
+    """Process a single notification asynchronously."""
+    
+    # Get container and use case
+    container = get_container()
+    use_case = container.send_notification_use_case()
+    
+    # Create request DTO
+    request = SendNotificationRequest(
+        recipient_id=recipient_id,
+        subject=subject,
+        content=content,
+        template_data=template_data,
+        priority=priority,
+        strategy=DeliveryStrategy(strategy),
+        scheduled_at=datetime.fromisoformat(scheduled_at) if scheduled_at else None,
+        expires_at=datetime.fromisoformat(expires_at) if expires_at else None
+    )
+    
+    # Execute use case
+    result = await use_case.execute(request)
+    
+    # Convert to serializable dict
+    return {
+        "success": result.success,
+        "message": result.message,
+        "data": result.data.model_dump() if result.data else None,
+        "errors": result.errors
+    }
+
+
+async def _cleanup_expired_notifications() -> Dict[str, Any]:
+    """Cleanup expired notifications."""
+    
+    container = get_container()
+    notification_repo = container.notification_repository()
+    
+    # Get expired notifications
+    expired_count = await notification_repo.cleanup_expired()
+    
+    return {
+        "success": True,
+        "message": f"Cleaned up {expired_count} expired notifications",
+        "cleaned_count": expired_count
+    }
+
+
+async def _retry_failed_notifications() -> Dict[str, Any]:
+    """Retry failed notifications that can be retried."""
+    
+    container = get_container()
+    delivery_repo = container.delivery_repository()
+    
+    # Get failed deliveries that can be retried
+    failed_deliveries = await delivery_repo.get_retryable_failed_deliveries()
+    
+    retry_count = 0
+    for delivery in failed_deliveries:
+        # Create retry task
+        retry_failed_notification_task.delay({
+            "recipient_id": str(delivery.user.id.value),
+            "subject": delivery.notification.message_template.subject,
+            "content": delivery.notification.message_template.content,
+            "template_data": delivery.notification.message_template.template_data,
+            "priority": delivery.notification.priority.value,
+            "strategy": delivery.strategy.value
+        })
+        retry_count += 1
+    
+    return {
+        "success": True,
+        "message": f"Submitted {retry_count} notifications for retry",
+        "retry_count": retry_count
+    }

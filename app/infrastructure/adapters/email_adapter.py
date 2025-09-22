@@ -1,6 +1,7 @@
 """
 Email notification adapter.
 """
+
 import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -25,7 +26,7 @@ class EmailNotificationAdapter(NotificationProviderInterface):
         password: str,
         from_email: str,
         use_tls: bool = True,
-        timeout: int = 30
+        timeout: int = 30,
     ) -> None:
         self._smtp_host = smtp_host
         self._smtp_port = smtp_port
@@ -51,43 +52,46 @@ class EmailNotificationAdapter(NotificationProviderInterface):
         if not self.can_handle_user(user):
             error = DeliveryError(
                 code="USER_NOT_REACHABLE",
-                message="User does not have email configured or is inactive"
+                message="User does not have email configured or is inactive",
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Cannot send email to user",
-                error=error
+                error=error,
             )
 
         try:
             # Create email message
             msg = MIMEMultipart()
-            msg['From'] = self._from_email
-            msg['To'] = user.email.value
-            msg['Subject'] = message.subject.value
+            msg["From"] = self._from_email
+            msg["To"] = user.email.value if user.email else ""
+            msg["Subject"] = message.subject.value
 
             # Add body
-            msg.attach(MIMEText(message.content.value, 'plain', 'utf-8'))
+            msg.attach(MIMEText(message.content.value, "plain", "utf-8"))
 
             # Send email
-            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=self._timeout) as server:
+            with smtplib.SMTP(
+                self._smtp_host, self._smtp_port, timeout=self._timeout
+            ) as server:
                 if self._use_tls:
                     server.starttls()
 
                 server.login(self._username, self._password)
                 server.send_message(msg)
 
-            logger.info(f"Email sent successfully to {user.email.value}")
+            logger.info(f"Email sent successfully to {user.email.value if user.email else 'unknown'}")
 
             return DeliveryResult(
                 success=True,
                 provider=self.name,
-                message=f"Email sent successfully to {user.email.value}",
+                message=f"Email sent successfully to {user.email.value if user.email else 'unknown'}",
                 metadata={
-                    "recipient": user.email.value,
-                    "subject": message.subject.value
-                }
+                    "to": user.email.value if user.email else "",
+                    "recipient": user.email.value if user.email else "",
+                    "subject": message.subject.value,
+                },
             )
 
         except smtplib.SMTPAuthenticationError as e:
@@ -95,13 +99,13 @@ class EmailNotificationAdapter(NotificationProviderInterface):
             error = DeliveryError(
                 code="AUTHENTICATION_ERROR",
                 message="SMTP authentication failed",
-                details={"smtp_error": str(e)}
+                details={"smtp_error": str(e)},
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Authentication failed",
-                error=error
+                error=error,
             )
 
         except smtplib.SMTPException as e:
@@ -109,13 +113,13 @@ class EmailNotificationAdapter(NotificationProviderInterface):
             error = DeliveryError(
                 code="SMTP_ERROR",
                 message="SMTP operation failed",
-                details={"smtp_error": str(e)}
+                details={"smtp_error": str(e)},
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="SMTP error occurred",
-                error=error
+                error=error,
             )
 
         except Exception as e:
@@ -123,19 +127,21 @@ class EmailNotificationAdapter(NotificationProviderInterface):
             error = DeliveryError(
                 code="UNEXPECTED_ERROR",
                 message="Unexpected error occurred while sending email",
-                details={"error": str(e)}
+                details={"error": str(e)},
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Unexpected error occurred",
-                error=error
+                error=error,
             )
 
     async def validate_configuration(self) -> bool:
         """Validate email provider configuration."""
         try:
-            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=self._timeout) as server:
+            with smtplib.SMTP(
+                self._smtp_host, self._smtp_port, timeout=self._timeout
+            ) as server:
                 if self._use_tls:
                     server.starttls()
                 server.login(self._username, self._password)

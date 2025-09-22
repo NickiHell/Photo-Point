@@ -1,8 +1,11 @@
 """
 Notification sending use cases.
 """
+
 import asyncio
 import uuid
+from datetime import UTC, datetime
+
 import backoff
 
 from ...domain.entities.delivery import Delivery
@@ -14,7 +17,11 @@ from ...domain.repositories import (
 )
 from ...domain.services import NotificationDeliveryService
 from ...domain.value_objects.delivery import DeliveryId, DeliveryStrategy
-from ...domain.value_objects.notification import MessageTemplate, NotificationId
+from ...domain.value_objects.notification import (
+    MessageTemplate,
+    NotificationId,
+    NotificationPriority,
+)
 from ...domain.value_objects.user import UserId
 from ..dto import (
     BulkNotificationRequest,
@@ -33,7 +40,7 @@ class SendNotificationUseCase:
         user_repository: UserRepository,
         notification_repository: NotificationRepository,
         delivery_repository: DeliveryRepository,
-        delivery_service: NotificationDeliveryService
+        delivery_service: NotificationDeliveryService,
     ) -> None:
         self._user_repository = user_repository
         self._notification_repository = notification_repository
@@ -44,7 +51,7 @@ class SendNotificationUseCase:
         backoff.expo,
         (ConnectionError, TimeoutError, Exception),
         max_tries=3,
-        max_time=30
+        max_time=30,
     )
     async def execute(self, request: SendNotificationRequest) -> OperationResponse:
         """Execute the send notification use case."""
@@ -57,14 +64,14 @@ class SendNotificationUseCase:
                 return OperationResponse(
                     success=False,
                     message="Recipient not found",
-                    errors=["User with given ID does not exist"]
+                    errors=["User with given ID does not exist"],
                 )
 
             if not user.can_receive_notifications():
                 return OperationResponse(
                     success=False,
                     message="User cannot receive notifications",
-                    errors=["User is inactive or has no available channels"]
+                    errors=["User is inactive or has no available channels"],
                 )
 
             # Create notification
@@ -72,16 +79,24 @@ class SendNotificationUseCase:
             message_template = MessageTemplate(
                 subject=request.subject,
                 content=request.content,
-                template_data=request.template_data
+                template_data=request.template_data,
             )
 
+            # Convert priority string to enum
+            priority = NotificationPriority.NORMAL  # Default
+            if request.priority:
+                try:
+                    priority = NotificationPriority(request.priority.lower())
+                except ValueError:
+                    # Use default if invalid priority
+                    pass
+
+            # Create notification entity
             notification = Notification(
                 notification_id=notification_id,
                 recipient_id=user_id,
                 message_template=message_template,
-                priority=request.priority,
-                scheduled_at=request.scheduled_at,
-                expires_at=request.expires_at
+                priority=priority,
             )
 
             # Save notification
@@ -89,11 +104,21 @@ class SendNotificationUseCase:
 
             # Create delivery
             delivery_id = DeliveryId(str(uuid.uuid4()))
+
+            # Convert string strategy to enum
+            strategy = DeliveryStrategy.FIRST_SUCCESS  # Default
+            if request.strategy:
+                try:
+                    strategy = DeliveryStrategy(request.strategy.upper())
+                except ValueError:
+                    # Use default if invalid strategy
+                    pass
+
             delivery = Delivery(
                 delivery_id=delivery_id,
                 notification=notification,
                 user=user,
-                strategy=request.strategy
+                strategy=strategy,
             )
 
             # Execute delivery
@@ -105,27 +130,20 @@ class SendNotificationUseCase:
             return OperationResponse(
                 success=delivery_result.success,
                 message="Notification processed successfully",
-                data=delivery_result
+                data=delivery_result,
             )
 
         except ValueError as e:
             return OperationResponse(
-                success=False,
-                message="Invalid input data",
-                errors=[str(e)]
+                success=False, message="Invalid input data", errors=[str(e)]
             )
         except Exception as e:
             return OperationResponse(
-                success=False,
-                message="Failed to send notification",
-                errors=[str(e)]
+                success=False, message="Failed to send notification", errors=[str(e)]
             )
 
     @backoff.on_exception(
-        backoff.expo,
-        (ConnectionError, TimeoutError),
-        max_tries=3,
-        max_time=15
+        backoff.expo, (ConnectionError, TimeoutError), max_tries=3, max_time=15
     )
     async def _execute_delivery(self, delivery: Delivery) -> DeliveryResponse:
         """Execute the delivery process."""
@@ -151,12 +169,11 @@ class SendNotificationUseCase:
         return self._create_delivery_response(delivery)
 
     @backoff.on_exception(
-        backoff.expo,
-        (ConnectionError, TimeoutError),
-        max_tries=2,
-        max_time=10
+        backoff.expo, (ConnectionError, TimeoutError), max_tries=2, max_time=10
     )
-    async def _execute_first_success_strategy(self, delivery: Delivery, providers: list) -> None:
+    async def _execute_first_success_strategy(
+        self, delivery: Delivery, providers: list
+    ) -> None:
         """Execute first success delivery strategy."""
         rendered_message = delivery.notification.render_message()
 
@@ -166,7 +183,7 @@ class SendNotificationUseCase:
                 delivery.add_attempt(
                     provider=provider.name,
                     channel=provider.get_channel_type(),
-                    result=result
+                    result=result,
                 )
 
                 if result.success:
@@ -177,26 +194,26 @@ class SendNotificationUseCase:
                     DeliveryError,
                     DeliveryResult,
                 )
+
                 error = DeliveryError(code="PROVIDER_ERROR", message=str(e))
                 result = DeliveryResult(
                     success=False,
                     provider=provider.name,
                     message="Provider failed with exception",
-                    error=error
+                    error=error,
                 )
                 delivery.add_attempt(
                     provider=provider.name,
                     channel=provider.get_channel_type(),
-                    result=result
+                    result=result,
                 )
 
     @backoff.on_exception(
-        backoff.expo,
-        (ConnectionError, TimeoutError),
-        max_tries=2,
-        max_time=15
+        backoff.expo, (ConnectionError, TimeoutError), max_tries=2, max_time=15
     )
-    async def _execute_try_all_strategy(self, delivery: Delivery, providers: list) -> None:
+    async def _execute_try_all_strategy(
+        self, delivery: Delivery, providers: list
+    ) -> None:
         """Execute try all delivery strategy."""
         rendered_message = delivery.notification.render_message()
 
@@ -207,7 +224,7 @@ class SendNotificationUseCase:
                 delivery.add_attempt(
                     provider=provider.name,
                     channel=provider.get_channel_type(),
-                    result=result
+                    result=result,
                 )
 
             except Exception as e:
@@ -215,26 +232,26 @@ class SendNotificationUseCase:
                     DeliveryError,
                     DeliveryResult,
                 )
+
                 error = DeliveryError(code="PROVIDER_ERROR", message=str(e))
                 result = DeliveryResult(
                     success=False,
                     provider=provider.name,
                     message="Provider failed with exception",
-                    error=error
+                    error=error,
                 )
                 delivery.add_attempt(
                     provider=provider.name,
                     channel=provider.get_channel_type(),
-                    result=result
+                    result=result,
                 )
 
     @backoff.on_exception(
-        backoff.expo,
-        (ConnectionError, TimeoutError),
-        max_tries=2,
-        max_time=10
+        backoff.expo, (ConnectionError, TimeoutError), max_tries=2, max_time=10
     )
-    async def _execute_fail_fast_strategy(self, delivery: Delivery, providers: list) -> None:
+    async def _execute_fail_fast_strategy(
+        self, delivery: Delivery, providers: list
+    ) -> None:
         """Execute fail fast delivery strategy."""
         rendered_message = delivery.notification.render_message()
 
@@ -244,7 +261,7 @@ class SendNotificationUseCase:
                 delivery.add_attempt(
                     provider=provider.name,
                     channel=provider.get_channel_type(),
-                    result=result
+                    result=result,
                 )
 
                 if not result.success:
@@ -255,17 +272,18 @@ class SendNotificationUseCase:
                     DeliveryError,
                     DeliveryResult,
                 )
+
                 error = DeliveryError(code="PROVIDER_ERROR", message=str(e))
                 result = DeliveryResult(
                     success=False,
                     provider=provider.name,
                     message="Provider failed with exception",
-                    error=error
+                    error=error,
                 )
                 delivery.add_attempt(
                     provider=provider.name,
                     channel=provider.get_channel_type(),
-                    result=result
+                    result=result,
                 )
                 break
 
@@ -273,15 +291,21 @@ class SendNotificationUseCase:
         """Create delivery response from delivery entity."""
         attempts = []
         for attempt in delivery.attempts:
-            attempts.append(DeliveryAttemptResponse(
-                provider=attempt.provider,
-                channel=attempt.channel.value,
-                attempted_at=attempt.attempted_at,
-                success=attempt.result.success,
-                message=attempt.result.message,
-                error=attempt.result.error.message if attempt.result.error else None,
-                delivery_time=attempt.result.delivery_time
-            ))
+            attempts.append(
+                DeliveryAttemptResponse(
+                    id=str(attempt.id) if hasattr(attempt, "id") else str(uuid.uuid4()),
+                    delivery_id=str(delivery.id.value),
+                    provider=attempt.provider,
+                    channel=attempt.channel.value,
+                    status="SUCCESS" if attempt.result.success else "FAILED",
+                    error_message=attempt.result.error.message
+                    if attempt.result.error
+                    else None,
+                    attempted_at=attempt.attempted_at,
+                    completed_at=attempt.attempted_at,  # Assuming completed at same time for now
+                    duration=getattr(attempt.result, "delivery_time", 0.0) or 0.0,
+                )
+            )
 
         successful_attempts = delivery.get_successful_attempts()
         failed_attempts = delivery.get_failed_attempts()
@@ -296,11 +320,12 @@ class SendNotificationUseCase:
             total_attempts=len(delivery.attempts),
             successful_providers=[attempt.provider for attempt in successful_attempts],
             failed_providers=[attempt.provider for attempt in failed_attempts],
-            started_at=delivery.started_at,
+            started_at=delivery.started_at or datetime.now(UTC),
             completed_at=delivery.completed_at,
-            total_delivery_time=delivery.get_total_delivery_time(),
+            total_delivery_time=delivery.get_total_delivery_time() or 0.0,
             created_at=delivery.created_at,
-            updated_at=delivery.updated_at
+            updated_at=delivery.updated_at,
+            success=len(successful_attempts) > 0,
         )
 
 
@@ -310,7 +335,7 @@ class SendBulkNotificationUseCase:
     def __init__(
         self,
         user_repository: UserRepository,
-        send_notification_use_case: SendNotificationUseCase
+        send_notification_use_case: SendNotificationUseCase,
     ) -> None:
         self._user_repository = user_repository
         self._send_notification_use_case = send_notification_use_case
@@ -319,7 +344,7 @@ class SendBulkNotificationUseCase:
         backoff.expo,
         (ConnectionError, TimeoutError, Exception),
         max_tries=2,
-        max_time=60
+        max_time=60,
     )
     async def execute(self, request: BulkNotificationRequest) -> OperationResponse:
         """Execute the bulk notification use case."""
@@ -336,7 +361,7 @@ class SendBulkNotificationUseCase:
                 return OperationResponse(
                     success=False,
                     message="No valid recipients found",
-                    errors=["None of the provided recipient IDs exist"]
+                    errors=["None of the provided recipient IDs exist"],
                 )
 
             # Create individual send requests
@@ -347,12 +372,12 @@ class SendBulkNotificationUseCase:
                     subject=request.subject,
                     content=request.content,
                     template_data={
-                        **request.template_data,
+                        **(request.template_data or {}),
                         "user_name": user.name.value,  # Add user name to template data
-                        "user_id": str(user.id.value)
+                        "user_id": str(user.id.value),
                     },
                     priority=request.priority,
-                    strategy=request.strategy
+                    strategy=request.strategy,
                 )
                 send_requests.append(send_request)
 
@@ -366,7 +391,7 @@ class SendBulkNotificationUseCase:
             # Execute all notifications
             results = await asyncio.gather(
                 *[send_with_semaphore(req) for req in send_requests],
-                return_exceptions=True
+                return_exceptions=True,
             )
 
             # Process results
@@ -375,17 +400,18 @@ class SendBulkNotificationUseCase:
 
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
-                    failed_deliveries.append({
-                        "user_id": send_requests[i].recipient_id,
-                        "error": str(result)
-                    })
-                elif result.success:
-                    successful_deliveries.append(result.data)
+                    failed_deliveries.append(
+                        {"user_id": send_requests[i].recipient_id, "error": str(result)}
+                    )
+                elif hasattr(result, "success") and result.success:
+                    successful_deliveries.append(getattr(result, "data", None))
                 else:
-                    failed_deliveries.append({
-                        "user_id": send_requests[i].recipient_id,
-                        "error": result.message
-                    })
+                    failed_deliveries.append(
+                        {
+                            "user_id": send_requests[i].recipient_id,
+                            "error": getattr(result, "message", "Unknown error"),
+                        }
+                    )
 
             return OperationResponse(
                 success=len(successful_deliveries) > 0,
@@ -394,19 +420,17 @@ class SendBulkNotificationUseCase:
                     "total_users": len(users),
                     "successful_deliveries": successful_deliveries,
                     "failed_deliveries": failed_deliveries,
-                    "success_rate": len(successful_deliveries) / len(users) * 100
-                }
+                    "success_rate": len(successful_deliveries) / len(users) * 100,
+                },
             )
 
         except ValueError as e:
             return OperationResponse(
-                success=False,
-                message="Invalid input data",
-                errors=[str(e)]
+                success=False, message="Invalid input data", errors=[str(e)]
             )
         except Exception as e:
             return OperationResponse(
                 success=False,
                 message="Failed to send bulk notifications",
-                errors=[str(e)]
+                errors=[str(e)],
             )

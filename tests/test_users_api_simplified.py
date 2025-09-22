@@ -40,17 +40,23 @@ class TestUsersAPISimplified:
             telegram_id="tg123",
             is_active=True,
             preferences={"lang": "en"},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
-            response = self.client.post("/", json={
-                "email": "test@example.com",
-                "phone_number": "+1234567890",
-                "telegram_id": "tg123",
-                "preferences": {"lang": "en"}
-            })
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
+            response = self.client.post(
+                "/",
+                json={
+                    "email": "test@example.com",
+                    "phone_number": "+1234567890",
+                    "telegram_id": "tg123",
+                    "preferences": {"lang": "en"},
+                },
+            )
 
         assert response.status_code == 201
         data = response.json()
@@ -73,14 +79,15 @@ class TestUsersAPISimplified:
             telegram_id=None,
             is_active=True,
             preferences={},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
-            response = self.client.post("/", json={
-                "phone_number": "+1234567890"
-            })
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
+            response = self.client.post("/", json={"phone_number": "+1234567890"})
 
         assert response.status_code == 201
         data = response.json()
@@ -93,10 +100,11 @@ class TestUsersAPISimplified:
         mock_use_case = AsyncMock()
         mock_use_case.execute.side_effect = ValueError("Invalid email format")
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
-            response = self.client.post("/", json={
-                "email": "invalid-email"
-            })
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
+            response = self.client.post("/", json={"email": "invalid-email"})
 
         assert response.status_code == 400
         assert "Invalid email format" in response.json()["detail"]
@@ -112,11 +120,14 @@ class TestUsersAPISimplified:
             telegram_id="tg123",
             is_active=True,
             preferences={"lang": "en"},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.get("/user-123")
 
         assert response.status_code == 200
@@ -130,7 +141,10 @@ class TestUsersAPISimplified:
         mock_use_case = AsyncMock()
         mock_use_case.execute.return_value = None
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.get("/nonexistent-user")
 
         assert response.status_code == 404
@@ -147,16 +161,22 @@ class TestUsersAPISimplified:
             telegram_id="tg456",
             is_active=False,
             preferences={"lang": "es"},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
-            response = self.client.put("/user-123", json={
-                "email": "updated@example.com",
-                "phone_number": "+0987654321",
-                "is_active": False
-            })
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
+            response = self.client.put(
+                "/user-123",
+                json={
+                    "email": "updated@example.com",
+                    "phone_number": "+0987654321",
+                    "is_active": False,
+                },
+            )
 
         assert response.status_code == 200
         data = response.json()
@@ -169,7 +189,10 @@ class TestUsersAPISimplified:
         mock_use_case = AsyncMock()
         mock_use_case.execute.return_value = None
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.delete("/user-123")
 
         assert response.status_code == 204
@@ -181,7 +204,10 @@ class TestUsersAPISimplified:
         mock_use_case = AsyncMock()
         mock_use_case.execute.side_effect = ValueError("Invalid user ID")
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.delete("/invalid-id")
 
         assert response.status_code == 400
@@ -205,11 +231,14 @@ class TestUsersAPIEdgeCases:
             telegram_id=None,
             is_active=True,
             preferences={},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.post("/", json={})
 
         # Should work with empty data
@@ -220,12 +249,15 @@ class TestUsersAPIEdgeCases:
         response = self.client.post("/", data="invalid json")
         assert response.status_code == 422
 
-    @pytest.mark.parametrize("user_data", [
-        {"email": "test@example.com"},
-        {"phone_number": "+1234567890"},
-        {"telegram_id": "tg123"},
-        {"preferences": {"lang": "en"}},
-    ])
+    @pytest.mark.parametrize(
+        "user_data",
+        [
+            {"email": "test@example.com"},
+            {"phone_number": "+1234567890"},
+            {"telegram_id": "tg123"},
+            {"preferences": {"lang": "en"}},
+        ],
+    )
     def test_create_user_various_fields(self, user_data):
         """Test user creation with various single fields."""
         mock_use_case = AsyncMock()
@@ -236,27 +268,36 @@ class TestUsersAPIEdgeCases:
             telegram_id=user_data.get("telegram_id"),
             is_active=True,
             preferences=user_data.get("preferences", {}),
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
         mock_use_case.execute.return_value = mock_response
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.post("/", json=user_data)
 
         assert response.status_code == 201
 
-    @pytest.mark.parametrize("error_type,expected_status", [
-        (ValueError("Invalid input"), 400),
-        (Exception("Database error"), 500),
-        (KeyError("Missing field"), 500),
-        (TypeError("Type mismatch"), 500),
-    ])
+    @pytest.mark.parametrize(
+        "error_type,expected_status",
+        [
+            (ValueError("Invalid input"), 400),
+            (Exception("Database error"), 500),
+            (KeyError("Missing field"), 500),
+            (TypeError("Type mismatch"), 500),
+        ],
+    )
     def test_error_handling(self, error_type, expected_status):
         """Test various error types are handled correctly."""
         mock_use_case = AsyncMock()
         mock_use_case.execute.side_effect = error_type
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             response = self.client.post("/", json={"email": "test@example.com"})
 
         assert response.status_code == expected_status
@@ -266,14 +307,16 @@ class TestUsersAPIEdgeCases:
 def test_users_router_import():
     """Test that users router can be imported successfully."""
     from app.presentation.api.routes.users import router
+
     assert router is not None
 
 
 def test_users_router_endpoints():
     """Test that router has expected endpoints."""
     from app.presentation.api.routes.users import router
+
     # Check that router has routes (real router should have routes)
-    assert hasattr(router, 'routes') or hasattr(router, 'post')
+    assert hasattr(router, "routes") or hasattr(router, "post")
 
 
 class TestUsersAPIIntegration:
@@ -295,7 +338,7 @@ class TestUsersAPIIntegration:
             telegram_id=None,
             is_active=True,
             preferences={},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
 
         get_response = UserResponseDTO(
@@ -305,7 +348,7 @@ class TestUsersAPIIntegration:
             telegram_id=None,
             is_active=True,
             preferences={},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
 
         update_response = UserResponseDTO(
@@ -315,10 +358,13 @@ class TestUsersAPIIntegration:
             telegram_id=None,
             is_active=True,
             preferences={},
-            created_at=datetime(2024, 1, 1, 12, 0, 0)
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
         )
 
-        with patch('app.presentation.dependencies.get_user_use_cases', return_value=mock_use_case):
+        with patch(
+            "app.presentation.dependencies.get_user_use_cases",
+            return_value=mock_use_case,
+        ):
             # Test CREATE
             mock_use_case.execute.return_value = create_response
             create_resp = self.client.post("/", json={"email": "crud@example.com"})
@@ -331,7 +377,9 @@ class TestUsersAPIIntegration:
 
             # Test UPDATE
             mock_use_case.execute.return_value = update_response
-            update_resp = self.client.put("/user-crud", json={"email": "updated@example.com"})
+            update_resp = self.client.put(
+                "/user-crud", json={"email": "updated@example.com"}
+            )
             assert update_resp.status_code == 200
 
             # Test DELETE

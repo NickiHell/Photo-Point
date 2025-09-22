@@ -1,7 +1,12 @@
 """
 SQLAlchemy models for database persistence.
 """
+
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.declarative import DeclarativeMeta
 
 try:
     from sqlalchemy import (
@@ -17,10 +22,11 @@ try:
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import relationship
 
-    Base = declarative_base()
+    Base: "DeclarativeMeta" = declarative_base()
 
-    class UserModel(Base):
+    class UserModel(Base):  # type: ignore[valid-type,misc]
         """User database model."""
+
         __tablename__ = "users"
 
         id = Column(String, primary_key=True)
@@ -34,9 +40,9 @@ try:
         # Relationships
         notifications = relationship("NotificationModel", back_populates="recipient")
 
-
-    class NotificationModel(Base):
+    class NotificationModel(Base):  # type: ignore[valid-type,misc]
         """Notification database model."""
+
         __tablename__ = "notifications"
 
         id = Column(String, primary_key=True)
@@ -53,11 +59,11 @@ try:
 
         # Relationships
         recipient = relationship("UserModel", back_populates="notifications")
-        deliveries = relationship("DeliveryModel", back_populates="notification")
+        deliveries = relationship("DeliveryModel", back_populates="deliveries")
 
-
-    class DeliveryModel(Base):
+    class DeliveryModel(Base):  # type: ignore[valid-type,misc]
         """Delivery database model."""
+
         __tablename__ = "deliveries"
 
         id = Column(String, primary_key=True)
@@ -72,9 +78,9 @@ try:
         notification = relationship("NotificationModel", back_populates="deliveries")
         attempts = relationship("DeliveryAttemptModel", back_populates="delivery")
 
-
-    class DeliveryAttemptModel(Base):
+    class DeliveryAttemptModel(Base):  # type: ignore[valid-type,misc]
         """Delivery attempt database model."""
+
         __tablename__ = "delivery_attempts"
 
         id = Column(Integer, primary_key=True, autoincrement=True)
@@ -91,8 +97,9 @@ try:
 
 except ImportError:
     # Fallback for when SQLAlchemy is not available
-    Base = None
-    UserModel = None
-    NotificationModel = None
-    DeliveryModel = None
-    DeliveryAttemptModel = None
+    from typing import Any
+    Base: Any = None  # type: ignore[misc,no-redef]
+    UserModel: Any = None  # type: ignore[misc,no-redef]
+    NotificationModel: Any = None  # type: ignore[misc,no-redef]
+    DeliveryModel: Any = None  # type: ignore[misc,no-redef]
+    DeliveryAttemptModel: Any = None  # type: ignore[misc,no-redef]

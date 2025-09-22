@@ -1,6 +1,7 @@
 """
 Delivery-related value objects.
 """
+
 from enum import Enum
 from typing import Any
 
@@ -25,24 +26,37 @@ class DeliveryId(ValueObject):
 
 class DeliveryStatus(str, Enum):
     """Status of message delivery."""
+
     PENDING = "pending"
     SENT = "sent"
     DELIVERED = "delivered"
     FAILED = "failed"
     RETRYING = "retrying"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class DeliveryStrategy(str, Enum):
     """Strategy for message delivery."""
+
     FIRST_SUCCESS = "first_success"  # Stop after first successful delivery
-    TRY_ALL = "try_all"             # Try all available channels
-    FAIL_FAST = "fail_fast"         # Stop after first failure
+    TRY_ALL = "try_all"  # Try all available channels
+    FAIL_FAST = "fail_fast"  # Stop after first failure
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class RetryPolicy(ValueObject):
     """Retry policy configuration."""
 
-    def __init__(self, max_retries: int = 3, retry_delay: float = 1.0, exponential_backoff: bool = True) -> None:
+    def __init__(
+        self,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        exponential_backoff: bool = True,
+    ) -> None:
         if max_retries < 0:
             raise ValueError("Max retries cannot be negative")
         if retry_delay < 0:
@@ -74,7 +88,9 @@ class RetryPolicy(ValueObject):
 class DeliveryError(ValueObject):
     """Delivery error information."""
 
-    def __init__(self, code: str, message: str, details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, code: str, message: str, details: dict[str, Any] | None = None
+    ) -> None:
         if not code or not code.strip():
             raise ValueError("Error code cannot be empty")
         if not message or not message.strip():
@@ -107,7 +123,7 @@ class DeliveryResult(ValueObject):
         message: str,
         error: DeliveryError | None = None,
         metadata: dict[str, Any] | None = None,
-        delivery_time: float | None = None
+        delivery_time: float | None = None,
     ) -> None:
         self._success = success
         self._provider = provider

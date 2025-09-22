@@ -1,6 +1,7 @@
 """
 Configuration management for the notification service.
 """
+
 import os
 from dataclasses import dataclass, field
 
@@ -12,6 +13,7 @@ logger = get_logger(__name__)
 @dataclass
 class DatabaseConfig:
     """Database configuration."""
+
     host: str = "localhost"
     port: int = 5432
     database: str = "notification_service"
@@ -28,6 +30,7 @@ class DatabaseConfig:
 @dataclass
 class RedisConfig:
     """Redis configuration."""
+
     host: str = "localhost"
     port: int = 6379
     db: int = 0
@@ -43,6 +46,7 @@ class RedisConfig:
 @dataclass
 class EmailConfig:
     """Email provider configuration."""
+
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     username: str = ""
@@ -55,6 +59,7 @@ class EmailConfig:
 @dataclass
 class SMSConfig:
     """SMS provider configuration."""
+
     provider: str = "twilio"
     account_sid: str = ""
     auth_token: str = ""
@@ -64,6 +69,7 @@ class SMSConfig:
 @dataclass
 class TelegramConfig:
     """Telegram provider configuration."""
+
     bot_token: str = ""
     parse_mode: str = "HTML"
 
@@ -71,6 +77,7 @@ class TelegramConfig:
 @dataclass
 class LoggingConfig:
     """Logging configuration."""
+
     level: str = "INFO"
     format: str = "json"
     enable_colors: bool = True
@@ -79,6 +86,7 @@ class LoggingConfig:
 @dataclass
 class APIConfig:
     """API configuration."""
+
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = False
@@ -90,6 +98,7 @@ class APIConfig:
 @dataclass
 class Config:
     """Main application configuration."""
+
     environment: str = "development"
     debug: bool = False
 
@@ -108,7 +117,6 @@ class Config:
         return cls(
             environment=os.getenv("ENVIRONMENT", "development"),
             debug=os.getenv("DEBUG", "false").lower() == "true",
-
             database=DatabaseConfig(
                 host=os.getenv("DB_HOST", "localhost"),
                 port=int(os.getenv("DB_PORT", "5432")),
@@ -117,14 +125,12 @@ class Config:
                 password=os.getenv("DB_PASSWORD", "password"),
                 echo=os.getenv("DB_ECHO", "false").lower() == "true",
             ),
-
             redis=RedisConfig(
                 host=os.getenv("REDIS_HOST", "localhost"),
                 port=int(os.getenv("REDIS_PORT", "6379")),
                 db=int(os.getenv("REDIS_DB", "0")),
                 password=os.getenv("REDIS_PASSWORD"),
             ),
-
             email=EmailConfig(
                 smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com"),
                 smtp_port=int(os.getenv("SMTP_PORT", "587")),
@@ -134,25 +140,21 @@ class Config:
                 from_address=os.getenv("SMTP_FROM_ADDRESS", "noreply@example.com"),
                 from_name=os.getenv("SMTP_FROM_NAME", "Notification Service"),
             ),
-
             sms=SMSConfig(
                 provider=os.getenv("SMS_PROVIDER", "twilio"),
                 account_sid=os.getenv("TWILIO_ACCOUNT_SID", ""),
                 auth_token=os.getenv("TWILIO_AUTH_TOKEN", ""),
                 from_number=os.getenv("TWILIO_FROM_NUMBER", ""),
             ),
-
             telegram=TelegramConfig(
                 bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
                 parse_mode=os.getenv("TELEGRAM_PARSE_MODE", "HTML"),
             ),
-
             logging=LoggingConfig(
                 level=os.getenv("LOG_LEVEL", "INFO"),
                 format=os.getenv("LOG_FORMAT", "json"),
                 enable_colors=os.getenv("LOG_COLORS", "true").lower() == "true",
             ),
-
             api=APIConfig(
                 host=os.getenv("API_HOST", "0.0.0.0"),
                 port=int(os.getenv("API_PORT", "8000")),

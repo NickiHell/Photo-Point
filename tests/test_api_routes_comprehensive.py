@@ -1,6 +1,7 @@
 """
 Comprehensive tests for all API Routes to maximize coverage.
 """
+
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -10,10 +11,13 @@ from fastapi.testclient import TestClient
 @pytest.fixture
 def mock_dependencies():
     """Mock all dependencies."""
-    with patch('app.presentation.dependencies.get_user_use_cases') as mock_user_uc, \
-         patch('app.presentation.dependencies.get_notification_use_cases') as mock_notif_uc, \
-         patch('app.presentation.dependencies.get_delivery_use_cases') as mock_del_uc:
-
+    with (
+        patch("app.presentation.dependencies.get_user_use_cases") as mock_user_uc,
+        patch(
+            "app.presentation.dependencies.get_notification_use_cases"
+        ) as mock_notif_uc,
+        patch("app.presentation.dependencies.get_delivery_use_cases") as mock_del_uc,
+    ):
         # Mock user use cases
         mock_create_user = AsyncMock()
         mock_get_user = AsyncMock()
@@ -22,11 +26,11 @@ def mock_dependencies():
         mock_get_all_users = AsyncMock()
 
         mock_user_uc.return_value = {
-            'create': mock_create_user,
-            'get': mock_get_user,
-            'update': mock_update_user,
-            'delete': mock_delete_user,
-            'get_all_active': mock_get_all_users
+            "create": mock_create_user,
+            "get": mock_get_user,
+            "update": mock_update_user,
+            "delete": mock_delete_user,
+            "get_all_active": mock_get_all_users,
         }
 
         # Mock notification use cases
@@ -34,8 +38,8 @@ def mock_dependencies():
         mock_send_bulk = AsyncMock()
 
         mock_notif_uc.return_value = {
-            'send': mock_send_notification,
-            'send_bulk': mock_send_bulk
+            "send": mock_send_notification,
+            "send_bulk": mock_send_bulk,
         }
 
         # Mock delivery use cases
@@ -43,20 +47,20 @@ def mock_dependencies():
         mock_get_delivery_status = AsyncMock()
 
         mock_del_uc.return_value = {
-            'get_user_deliveries': mock_get_deliveries,
-            'get_delivery_status': mock_get_delivery_status
+            "get_user_deliveries": mock_get_deliveries,
+            "get_delivery_status": mock_get_delivery_status,
         }
 
         yield {
-            'user_create': mock_create_user,
-            'user_get': mock_get_user,
-            'user_update': mock_update_user,
-            'user_delete': mock_delete_user,
-            'user_get_all': mock_get_all_users,
-            'notification_send': mock_send_notification,
-            'notification_bulk': mock_send_bulk,
-            'delivery_get': mock_get_deliveries,
-            'delivery_status': mock_get_delivery_status
+            "user_create": mock_create_user,
+            "user_get": mock_get_user,
+            "user_update": mock_update_user,
+            "user_delete": mock_delete_user,
+            "user_get_all": mock_get_all_users,
+            "notification_send": mock_send_notification,
+            "notification_bulk": mock_send_bulk,
+            "delivery_get": mock_get_deliveries,
+            "delivery_status": mock_get_delivery_status,
         }
 
 
@@ -65,6 +69,7 @@ def client():
     """Create FastAPI test client."""
     try:
         from app.presentation.api.main import app
+
         return TestClient(app)
     except ImportError:
         # Create minimal app for testing
@@ -113,12 +118,9 @@ class TestUserRoutes:
         mock_response.preferences = set()
         mock_response.created_at.isoformat.return_value = "2024-01-01T00:00:00Z"
 
-        mock_dependencies['user_create'].return_value = mock_response
+        mock_dependencies["user_create"].return_value = mock_response
 
-        user_data = {
-            "name": "Test User",
-            "email": "test@gmail.com"
-        }
+        user_data = {"name": "Test User", "email": "test@gmail.com"}
 
         response = client.post("/users/", json=user_data)
         assert response.status_code == 201
@@ -145,7 +147,7 @@ class TestUserRoutes:
         mock_response.preferences = set()
         mock_response.created_at.isoformat.return_value = "2024-01-01T00:00:00Z"
 
-        mock_dependencies['user_get'].return_value = mock_response
+        mock_dependencies["user_get"].return_value = mock_response
 
         response = client.get("/users/user-123")
         assert response.status_code == 200
@@ -158,7 +160,7 @@ class TestUserRoutes:
         """Test user retrieval when user not found."""
         from app.application.exceptions import UserNotFoundError
 
-        mock_dependencies['user_get'].side_effect = UserNotFoundError("User not found")
+        mock_dependencies["user_get"].side_effect = UserNotFoundError("User not found")
 
         response = client.get("/users/nonexistent")
         assert response.status_code == 404
@@ -178,12 +180,9 @@ class TestUserRoutes:
         mock_response.preferences = set()
         mock_response.created_at.isoformat.return_value = "2024-01-01T00:00:00Z"
 
-        mock_dependencies['user_update'].return_value = mock_response
+        mock_dependencies["user_update"].return_value = mock_response
 
-        update_data = {
-            "name": "Updated User",
-            "email": "updated@gmail.com"
-        }
+        update_data = {"name": "Updated User", "email": "updated@gmail.com"}
 
         response = client.put("/users/user-123", json=update_data)
         assert response.status_code == 200
@@ -194,7 +193,7 @@ class TestUserRoutes:
 
     def test_delete_user_success(self, client, mock_dependencies):
         """Test successful user deletion."""
-        mock_dependencies['user_delete'].return_value = None
+        mock_dependencies["user_delete"].return_value = None
 
         response = client.delete("/users/user-123")
         assert response.status_code == 204
@@ -221,7 +220,7 @@ class TestUserRoutes:
         mock_user2.preferences = set()
         mock_user2.created_at.isoformat.return_value = "2024-01-01T00:00:00Z"
 
-        mock_dependencies['user_get_all'].return_value = [mock_user1, mock_user2]
+        mock_dependencies["user_get_all"].return_value = [mock_user1, mock_user2]
 
         response = client.get("/users/")
         assert response.status_code == 200
@@ -243,13 +242,13 @@ class TestNotificationRoutes:
         mock_response.message = "Notification sent successfully"
         mock_response.delivery_results = []
 
-        mock_dependencies['notification_send'].return_value = mock_response
+        mock_dependencies["notification_send"].return_value = mock_response
 
         notification_data = {
             "recipient_id": "user-123",
             "subject": "Test Notification",
             "message": "This is a test notification",
-            "priority": "normal"
+            "priority": "normal",
         }
 
         response = client.post("/notifications/send", json=notification_data)
@@ -274,7 +273,7 @@ class TestNotificationRoutes:
         mock_response.failed_count = 0
         mock_response.results = []
 
-        mock_dependencies['notification_bulk'].return_value = mock_response
+        mock_dependencies["notification_bulk"].return_value = mock_response
 
         bulk_data = {
             "notifications": [
@@ -282,14 +281,14 @@ class TestNotificationRoutes:
                     "recipient_id": "user-1",
                     "subject": "Test 1",
                     "message": "Message 1",
-                    "priority": "normal"
+                    "priority": "normal",
                 },
                 {
                     "recipient_id": "user-2",
                     "subject": "Test 2",
                     "message": "Message 2",
-                    "priority": "high"
-                }
+                    "priority": "high",
+                },
             ]
         }
 
@@ -305,13 +304,15 @@ class TestNotificationRoutes:
         """Test notification sending when user not found."""
         from app.application.exceptions import UserNotFoundError
 
-        mock_dependencies['notification_send'].side_effect = UserNotFoundError("User not found")
+        mock_dependencies["notification_send"].side_effect = UserNotFoundError(
+            "User not found"
+        )
 
         notification_data = {
             "recipient_id": "nonexistent",
             "subject": "Test",
             "message": "Test message",
-            "priority": "normal"
+            "priority": "normal",
         }
 
         response = client.post("/notifications/send", json=notification_data)
@@ -333,7 +334,7 @@ class TestDeliveryRoutes:
         mock_delivery1.sent_at.isoformat.return_value = "2024-01-01T00:01:00Z"
         mock_delivery1.delivered_at.isoformat.return_value = "2024-01-01T00:02:00Z"
 
-        mock_dependencies['delivery_get'].return_value = [mock_delivery1]
+        mock_dependencies["delivery_get"].return_value = [mock_delivery1]
 
         response = client.get("/deliveries/user/user-123")
         assert response.status_code == 200
@@ -352,7 +353,7 @@ class TestDeliveryRoutes:
         mock_delivery.attempts = []
         mock_delivery.created_at.isoformat.return_value = "2024-01-01T00:00:00Z"
 
-        mock_dependencies['delivery_status'].return_value = mock_delivery
+        mock_dependencies["delivery_status"].return_value = mock_delivery
 
         response = client.get("/deliveries/delivery-123/status")
         assert response.status_code == 200
@@ -365,7 +366,9 @@ class TestDeliveryRoutes:
         """Test delivery status when delivery not found."""
         from app.application.exceptions import DeliveryNotFoundError
 
-        mock_dependencies['delivery_status'].side_effect = DeliveryNotFoundError("Delivery not found")
+        mock_dependencies["delivery_status"].side_effect = DeliveryNotFoundError(
+            "Delivery not found"
+        )
 
         response = client.get("/deliveries/nonexistent/status")
         assert response.status_code == 404
@@ -376,7 +379,7 @@ class TestAPIErrorHandling:
 
     def test_internal_server_error(self, client, mock_dependencies):
         """Test internal server error handling."""
-        mock_dependencies['user_get'].side_effect = Exception("Internal error")
+        mock_dependencies["user_get"].side_effect = Exception("Internal error")
 
         response = client.get("/users/user-123")
         assert response.status_code == 500
@@ -418,9 +421,7 @@ class TestAPIMiddleware:
         """Test request validation middleware."""
         # Send malformed JSON
         response = client.post(
-            "/users/",
-            data="invalid json",
-            headers={"Content-Type": "application/json"}
+            "/users/", data="invalid json", headers={"Content-Type": "application/json"}
         )
         assert response.status_code == 422
 
@@ -435,7 +436,9 @@ def test_api_routes_import():
         )
         from app.presentation.api.routes.users import router as users_router
 
-        assert all([users_router, notifications_router, deliveries_router, health_router])
+        assert all(
+            [users_router, notifications_router, deliveries_router, health_router]
+        )
     except ImportError as e:
         # Some modules might have dependency issues
         pytest.skip(f"API routes import failed: {e}")
@@ -445,16 +448,20 @@ def test_fastapi_app_creation():
     """Test FastAPI app can be created."""
     try:
         from app.presentation.api.main import app
+
         assert app is not None
-        assert hasattr(app, 'routes')
+        assert hasattr(app, "routes")
     except ImportError as e:
         pytest.skip(f"FastAPI app creation failed: {e}")
 
 
-@pytest.mark.parametrize("endpoint", [
-    "/health/",
-    "/health/detailed",
-])
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "/health/",
+        "/health/detailed",
+    ],
+)
 def test_health_endpoints_parametrized(client, endpoint):
     """Test health endpoints with parametrized testing."""
     response = client.get(endpoint)
@@ -462,14 +469,19 @@ def test_health_endpoints_parametrized(client, endpoint):
     assert response.headers.get("content-type") == "application/json"
 
 
-@pytest.mark.parametrize("method,endpoint,expected_status", [
-    ("GET", "/users/", 200),
-    ("GET", "/health/", 200),
-    ("POST", "/nonexistent", 404),
-    ("PUT", "/nonexistent", 404),
-    ("DELETE", "/nonexistent", 404),
-])
-def test_http_methods_parametrized(client, method, endpoint, expected_status, mock_dependencies):
+@pytest.mark.parametrize(
+    "method,endpoint,expected_status",
+    [
+        ("GET", "/users/", 200),
+        ("GET", "/health/", 200),
+        ("POST", "/nonexistent", 404),
+        ("PUT", "/nonexistent", 404),
+        ("DELETE", "/nonexistent", 404),
+    ],
+)
+def test_http_methods_parametrized(
+    client, method, endpoint, expected_status, mock_dependencies
+):
     """Test HTTP methods with parametrized testing."""
     if method == "GET":
         response = client.get(endpoint)
@@ -483,4 +495,8 @@ def test_http_methods_parametrized(client, method, endpoint, expected_status, mo
         pytest.skip(f"Method {method} not implemented in test")
 
     # Allow for various response codes depending on endpoint implementation
-    assert response.status_code in [expected_status, 422, 500]  # Validation or server errors acceptable
+    assert response.status_code in [
+        expected_status,
+        422,
+        500,
+    ]  # Validation or server errors acceptable

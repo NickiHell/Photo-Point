@@ -9,6 +9,7 @@ from typing import Any
 
 class NotificationType(str, Enum):
     """Типы уведомлений."""
+
     EMAIL = "email"
     SMS = "sms"
     TELEGRAM = "telegram"
@@ -16,6 +17,7 @@ class NotificationType(str, Enum):
 
 class NotificationStatus(str, Enum):
     """Статусы уведомлений."""
+
     PENDING = "pending"
     SENT = "sent"
     FAILED = "failed"
@@ -25,6 +27,7 @@ class NotificationStatus(str, Enum):
 @dataclass
 class User:
     """Модель пользователя."""
+
     id: str
     name: str
     email: str | None = None
@@ -35,6 +38,7 @@ class User:
 @dataclass
 class NotificationMessage:
     """Модель сообщения уведомления."""
+
     subject: str
     content: str
     template_data: dict[str, Any] | None = None
@@ -48,15 +52,13 @@ class NotificationMessage:
             subject = self.subject
             content = self.content
 
-        return {
-            "subject": subject,
-            "content": content
-        }
+        return {"subject": subject, "content": content}
 
 
 @dataclass
 class NotificationResult:
     """Результат отправки уведомления."""
+
     success: bool
     provider: NotificationType
     message: str

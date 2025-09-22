@@ -188,17 +188,17 @@ class TestDeliveriesRoutesDirectly:
 
         # Mock statistics data
         mock_stats = {
-            'total_deliveries': 100,
-            'successful_deliveries': 85,
-            'failed_deliveries': 10,
-            'pending_deliveries': 5,
-            'success_rate': 85.0,
-            'average_delivery_time': 45.5,
-            'provider_statistics': {
-                'smtp': {'total': 50, 'successful': 45, 'failed': 5},
-                'sms': {'total': 30, 'successful': 25, 'failed': 5},
-                'telegram': {'total': 20, 'successful': 15, 'failed': 0}
-            }
+            "total_deliveries": 100,
+            "successful_deliveries": 85,
+            "failed_deliveries": 10,
+            "pending_deliveries": 5,
+            "success_rate": 85.0,
+            "average_delivery_time": 45.5,
+            "provider_statistics": {
+                "smtp": {"total": 50, "successful": 45, "failed": 5},
+                "sms": {"total": 30, "successful": 25, "failed": 5},
+                "telegram": {"total": 20, "successful": 15, "failed": 0},
+            },
         }
         mock_repo.get_delivery_statistics.return_value = mock_stats
 
@@ -213,7 +213,7 @@ class TestDeliveriesRoutesDirectly:
         assert result.pending_deliveries == 5
         assert result.success_rate == 85.0
         assert result.average_delivery_time == 45.5
-        assert result.provider_statistics == mock_stats['provider_statistics']
+        assert result.provider_statistics == mock_stats["provider_statistics"]
 
     @pytest.mark.asyncio
     async def test_get_delivery_statistics_custom_period(self):
@@ -226,13 +226,13 @@ class TestDeliveriesRoutesDirectly:
         # Mock delivery repository
         mock_repo = AsyncMock()
         mock_stats = {
-            'total_deliveries': 500,
-            'successful_deliveries': 425,
-            'failed_deliveries': 50,
-            'pending_deliveries': 25,
-            'success_rate': 85.0,
-            'average_delivery_time': 42.3,
-            'provider_statistics': {}
+            "total_deliveries": 500,
+            "successful_deliveries": 425,
+            "failed_deliveries": 50,
+            "pending_deliveries": 25,
+            "success_rate": 85.0,
+            "average_delivery_time": 42.3,
+            "provider_statistics": {},
         }
         mock_repo.get_delivery_statistics.return_value = mock_stats
 
@@ -264,7 +264,7 @@ class TestDeliveryRouteModels:
             status="DELIVERED",
             attempts=2,
             created_at="2024-01-01T12:00:00",
-            completed_at="2024-01-01T12:05:00"
+            completed_at="2024-01-01T12:05:00",
         )
         assert response.id == "delivery-123"
         assert response.notification_id == "notif-123"
@@ -281,7 +281,7 @@ class TestDeliveryRouteModels:
             status="PENDING",
             attempts=1,
             created_at="2024-01-01T12:00:00",
-            completed_at=None
+            completed_at=None,
         )
         assert response_pending.completed_at is None
 
@@ -305,8 +305,8 @@ class TestDeliveryRouteModels:
             average_delivery_time=45.5,
             provider_statistics={
                 "smtp": {"total": 50, "successful": 45},
-                "sms": {"total": 50, "successful": 40}
-            }
+                "sms": {"total": 50, "successful": 40},
+            },
         )
         assert stats.period_days == 7
         assert stats.total_deliveries == 100
@@ -321,6 +321,7 @@ class TestDeliveriesRouteImports:
         """Test that router can be imported."""
         try:
             from app.presentation.api.routes.deliveries import router
+
             assert router is not None
         except ImportError:
             pytest.skip("Deliveries route not available")
@@ -333,6 +334,7 @@ class TestDeliveriesRouteImports:
                 get_delivery,
                 get_delivery_statistics,
             )
+
             # All functions should be callable
             assert callable(get_delivery)
             assert callable(get_deliveries_by_notification)
@@ -347,6 +349,7 @@ class TestDeliveriesRouteImports:
                 DeliveryResponse,
                 DeliveryStatisticsResponse,
             )
+
             # All should be classes
             assert isinstance(DeliveryResponse, type)
             assert isinstance(DeliveryStatisticsResponse, type)
@@ -357,12 +360,15 @@ class TestDeliveriesRouteImports:
 class TestDeliveriesRouteErrorHandling:
     """Test error handling in deliveries routes."""
 
-    @pytest.mark.parametrize("error_type,expected_status", [
-        (ValueError("Invalid input"), 400),
-        (Exception("Database error"), 500),
-        (KeyError("Missing field"), 500),
-        (TypeError("Type mismatch"), 500),
-    ])
+    @pytest.mark.parametrize(
+        "error_type,expected_status",
+        [
+            (ValueError("Invalid input"), 400),
+            (Exception("Database error"), 500),
+            (KeyError("Missing field"), 500),
+            (TypeError("Type mismatch"), 500),
+        ],
+    )
     @pytest.mark.asyncio
     async def test_get_delivery_error_handling(self, error_type, expected_status):
         """Test get_delivery error handling."""
@@ -395,13 +401,13 @@ class TestDeliveriesRouteErrorHandling:
         # Mock repository
         mock_repo = AsyncMock()
         mock_stats = {
-            'total_deliveries': days_param * 10,
-            'successful_deliveries': days_param * 8,
-            'failed_deliveries': days_param * 1,
-            'pending_deliveries': days_param * 1,
-            'success_rate': 80.0,
-            'average_delivery_time': 30.0,
-            'provider_statistics': {}
+            "total_deliveries": days_param * 10,
+            "successful_deliveries": days_param * 8,
+            "failed_deliveries": days_param * 1,
+            "pending_deliveries": days_param * 1,
+            "success_rate": 80.0,
+            "average_delivery_time": 30.0,
+            "provider_statistics": {},
         }
         mock_repo.get_delivery_statistics.return_value = mock_stats
 
@@ -449,13 +455,13 @@ class TestDeliveriesAPIIntegration:
 
         # Mock statistics
         mock_stats = {
-            'total_deliveries': 1,
-            'successful_deliveries': 1,
-            'failed_deliveries': 0,
-            'pending_deliveries': 0,
-            'success_rate': 100.0,
-            'average_delivery_time': 60.0,
-            'provider_statistics': {'smtp': {'total': 1, 'successful': 1}}
+            "total_deliveries": 1,
+            "successful_deliveries": 1,
+            "failed_deliveries": 0,
+            "pending_deliveries": 0,
+            "success_rate": 100.0,
+            "average_delivery_time": 60.0,
+            "provider_statistics": {"smtp": {"total": 1, "successful": 1}},
         }
         mock_repo.get_delivery_statistics.return_value = mock_stats
 
@@ -465,7 +471,9 @@ class TestDeliveriesAPIIntegration:
         assert delivery_result.status == "DELIVERED"
 
         # Test deliveries by notification
-        notification_deliveries = await get_deliveries_by_notification("notif-flow", mock_repo)
+        notification_deliveries = await get_deliveries_by_notification(
+            "notif-flow", mock_repo
+        )
         assert len(notification_deliveries) == 1
         assert notification_deliveries[0].id == "delivery-flow"
 

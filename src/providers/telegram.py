@@ -64,7 +64,9 @@ class TelegramProvider(NotificationProvider):
                         elif error_code == 429:
                             raise RateLimitError(f"Rate limit exceeded: {description}")
                         else:
-                            raise SendError(f"Telegram API error {error_code}: {description}")
+                            raise SendError(
+                                f"Telegram API error {error_code}: {description}"
+                            )
 
                     return result
 
@@ -73,14 +75,16 @@ class TelegramProvider(NotificationProvider):
             except TimeoutError:
                 raise SendError("Request timeout")
 
-    async def send(self, user: User, message: NotificationMessage) -> NotificationResult:
+    async def send(
+        self, user: User, message: NotificationMessage
+    ) -> NotificationResult:
         """Отправить Telegram уведомление."""
         if not self.is_user_reachable(user):
             return NotificationResult(
                 success=False,
                 provider=NotificationType.TELEGRAM,
                 message="User telegram_chat_id is not available",
-                error="No telegram_chat_id provided"
+                error="No telegram_chat_id provided",
             )
 
         try:
@@ -88,10 +92,12 @@ class TelegramProvider(NotificationProvider):
             rendered_message = message.render()
 
             # Формирование текста сообщения (в Telegram тема и содержимое объединяются)
-            if rendered_message['subject']:
-                text = f"*{rendered_message['subject']}*\n\n{rendered_message['content']}"
+            if rendered_message["subject"]:
+                text = (
+                    f"*{rendered_message['subject']}*\n\n{rendered_message['content']}"
+                )
             else:
-                text = rendered_message['content']
+                text = rendered_message["content"]
 
             # Ограничение длины сообщения (Telegram поддерживает до 4096 символов)
             if len(text) > 4096:
@@ -101,23 +107,22 @@ class TelegramProvider(NotificationProvider):
             data = {
                 "chat_id": user.telegram_chat_id,
                 "text": text,
-                "parse_mode": "Markdown"  # Поддержка markdown форматирования
+                "parse_mode": "Markdown",  # Поддержка markdown форматирования
             }
 
             # Отправка сообщения
             result = await self._make_request("sendMessage", data)
 
             message_id = result["result"]["message_id"]
-            logger.info(f"Telegram message sent successfully to chat {user.telegram_chat_id}, message_id: {message_id}")
+            logger.info(
+                f"Telegram message sent successfully to chat {user.telegram_chat_id}, message_id: {message_id}"
+            )
 
             return NotificationResult(
                 success=True,
                 provider=NotificationType.TELEGRAM,
                 message=f"Telegram message sent to chat {user.telegram_chat_id}",
-                metadata={
-                    "chat_id": user.telegram_chat_id,
-                    "message_id": message_id
-                }
+                metadata={"chat_id": user.telegram_chat_id, "message_id": message_id},
             )
 
         except AuthenticationError as e:
@@ -126,7 +131,7 @@ class TelegramProvider(NotificationProvider):
                 success=False,
                 provider=NotificationType.TELEGRAM,
                 message="Authentication failed",
-                error=str(e)
+                error=str(e),
             )
 
         except RateLimitError as e:
@@ -135,7 +140,7 @@ class TelegramProvider(NotificationProvider):
                 success=False,
                 provider=NotificationType.TELEGRAM,
                 message="Rate limit exceeded",
-                error=str(e)
+                error=str(e),
             )
 
         except SendError as e:
@@ -144,7 +149,7 @@ class TelegramProvider(NotificationProvider):
                 success=False,
                 provider=NotificationType.TELEGRAM,
                 message="Failed to send Telegram message",
-                error=str(e)
+                error=str(e),
             )
 
         except Exception as e:
@@ -153,7 +158,7 @@ class TelegramProvider(NotificationProvider):
                 success=False,
                 provider=NotificationType.TELEGRAM,
                 message="Unexpected error occurred",
-                error=str(e)
+                error=str(e),
             )
 
     def is_user_reachable(self, user: User) -> bool:
@@ -180,7 +185,9 @@ class TelegramProvider(NotificationProvider):
             result = await self._make_request("getMe", {})
             bot_info = result["result"]
 
-            logger.info(f"Telegram bot validated: @{bot_info['username']} ({bot_info['first_name']})")
+            logger.info(
+                f"Telegram bot validated: @{bot_info['username']} ({bot_info['first_name']})"
+            )
             return True
 
         except AuthenticationError:

@@ -30,7 +30,7 @@ class MockProvider(NotificationProvider):
             success=self.success,
             provider=NotificationType.EMAIL,
             message=f"{self.name} {'succeeded' if self.success else 'failed'}",
-            error=None if self.success else "Mock error"
+            error=None if self.success else "Mock error",
         )
 
     def is_user_reachable(self, user):
@@ -54,12 +54,11 @@ class TestNotificationService(unittest.TestCase):
             name="Test User",
             email="test@example.com",
             phone="+1234567890",
-            telegram_chat_id="123456789"
+            telegram_chat_id="123456789",
         )
 
         self.message = NotificationMessage(
-            subject="Test Subject",
-            content="Test content"
+            subject="Test Subject", content="Test content"
         )
 
     def test_first_success_strategy(self):
@@ -67,20 +66,20 @@ class TestNotificationService(unittest.TestCase):
         providers = [
             MockProvider("Provider1", success=False),
             MockProvider("Provider2", success=True),
-            MockProvider("Provider3", success=True)
+            MockProvider("Provider3", success=True),
         ]
 
         service = NotificationService(providers)
 
         async def run_test():
             report = await service.send_notification(
-                self.user,
-                self.message,
-                DeliveryStrategy.FIRST_SUCCESS
+                self.user, self.message, DeliveryStrategy.FIRST_SUCCESS
             )
 
             self.assertTrue(report.success)
-            self.assertEqual(report.total_attempts, 4)  # 3 попытки для Provider1 + 1 для Provider2
+            self.assertEqual(
+                report.total_attempts, 4
+            )  # 3 попытки для Provider1 + 1 для Provider2
             self.assertEqual(providers[0].call_count, 3)  # 3 неудачных попытки
             self.assertEqual(providers[1].call_count, 1)  # 1 успешная попытка
             self.assertEqual(providers[2].call_count, 0)  # Не должен быть вызван
@@ -92,20 +91,20 @@ class TestNotificationService(unittest.TestCase):
         providers = [
             MockProvider("Provider1", success=False),
             MockProvider("Provider2", success=True),
-            MockProvider("Provider3", success=True)
+            MockProvider("Provider3", success=True),
         ]
 
         service = NotificationService(providers)
 
         async def run_test():
             report = await service.send_notification(
-                self.user,
-                self.message,
-                DeliveryStrategy.TRY_ALL
+                self.user, self.message, DeliveryStrategy.TRY_ALL
             )
 
             self.assertTrue(report.success)
-            self.assertEqual(report.total_attempts, 9)  # 3 попытки для каждого провайдера (3+3+3)
+            self.assertEqual(
+                report.total_attempts, 9
+            )  # 3 попытки для каждого провайдера (3+3+3)
             # Проверяем что есть успешные провайдеры
             self.assertGreater(len(report.successful_providers), 0)
 
@@ -116,20 +115,20 @@ class TestNotificationService(unittest.TestCase):
         providers = [
             MockProvider("Provider1", success=False),
             MockProvider("Provider2", success=True),
-            MockProvider("Provider3", success=True)
+            MockProvider("Provider3", success=True),
         ]
 
         service = NotificationService(providers)
 
         async def run_test():
             report = await service.send_notification(
-                self.user,
-                self.message,
-                DeliveryStrategy.FAIL_FAST
+                self.user, self.message, DeliveryStrategy.FAIL_FAST
             )
 
             self.assertFalse(report.success)
-            self.assertEqual(report.total_attempts, 1)  # Должен остановиться после ошибки
+            self.assertEqual(
+                report.total_attempts, 1
+            )  # Должен остановиться после ошибки
             self.assertEqual(providers[0].call_count, 1)
             self.assertEqual(providers[1].call_count, 0)
             self.assertEqual(providers[2].call_count, 0)
@@ -140,18 +139,14 @@ class TestNotificationService(unittest.TestCase):
         """Тест с недоступным пользователем."""
         # Провайдер, который считает пользователя недоступным
         provider = MockProvider(
-            "Provider1",
-            success=True,
-            reachable_check=lambda user: False
+            "Provider1", success=True, reachable_check=lambda user: False
         )
 
         service = NotificationService([provider])
 
         async def run_test():
             report = await service.send_notification(
-                self.user,
-                self.message,
-                DeliveryStrategy.FIRST_SUCCESS
+                self.user, self.message, DeliveryStrategy.FIRST_SUCCESS
             )
 
             self.assertFalse(report.success)
@@ -165,7 +160,7 @@ class TestNotificationService(unittest.TestCase):
         users = [
             User(id="user1", name="User 1", email="user1@example.com"),
             User(id="user2", name="User 2", email="user2@example.com"),
-            User(id="user3", name="User 3", email="user3@example.com")
+            User(id="user3", name="User 3", email="user3@example.com"),
         ]
 
         provider = MockProvider("Provider1", success=True)
@@ -173,9 +168,7 @@ class TestNotificationService(unittest.TestCase):
 
         async def run_test():
             reports = await service.send_bulk_notifications(
-                users,
-                self.message,
-                max_concurrent=2
+                users, self.message, max_concurrent=2
             )
 
             self.assertEqual(len(reports), 3)
@@ -193,23 +186,20 @@ class TestMessageTemplating(unittest.TestCase):
         message = NotificationMessage(
             subject="Hello, {name}!",
             content="Your order #{order_id} is ready. Total: ${total}",
-            template_data={
-                "name": "John",
-                "order_id": "12345",
-                "total": "29.99"
-            }
+            template_data={"name": "John", "order_id": "12345", "total": "29.99"},
         )
 
         rendered = message.render()
 
         self.assertEqual(rendered["subject"], "Hello, John!")
-        self.assertEqual(rendered["content"], "Your order #12345 is ready. Total: $29.99")
+        self.assertEqual(
+            rendered["content"], "Your order #12345 is ready. Total: $29.99"
+        )
 
     def test_message_without_template(self):
         """Тест сообщения без шаблонных данных."""
         message = NotificationMessage(
-            subject="Static subject",
-            content="Static content"
+            subject="Static subject", content="Static content"
         )
 
         rendered = message.render()
@@ -223,11 +213,7 @@ class TestUserReachability(unittest.TestCase):
 
     def test_user_with_email(self):
         """Тест пользователя с email."""
-        user = User(
-            id="user1",
-            name="User with Email",
-            email="user@example.com"
-        )
+        user = User(id="user1", name="User with Email", email="user@example.com")
 
         # Для тестирования создаем простую проверку
         # В реальном коде это делается в конкретных провайдерах
@@ -235,30 +221,19 @@ class TestUserReachability(unittest.TestCase):
 
     def test_user_with_phone(self):
         """Тест пользователя с телефоном."""
-        user = User(
-            id="user2",
-            name="User with Phone",
-            phone="+1234567890"
-        )
+        user = User(id="user2", name="User with Phone", phone="+1234567890")
 
         self.assertTrue(bool(user.phone))
 
     def test_user_with_telegram(self):
         """Тест пользователя с Telegram."""
-        user = User(
-            id="user3",
-            name="User with Telegram",
-            telegram_chat_id="123456789"
-        )
+        user = User(id="user3", name="User with Telegram", telegram_chat_id="123456789")
 
         self.assertTrue(bool(user.telegram_chat_id))
 
     def test_user_without_contacts(self):
         """Тест пользователя без контактных данных."""
-        user = User(
-            id="user4",
-            name="User without contacts"
-        )
+        user = User(id="user4", name="User without contacts")
 
         self.assertFalse(bool(user.email))
         self.assertFalse(bool(user.phone))

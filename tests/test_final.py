@@ -1,6 +1,7 @@
 """
 Final comprehensive tests to significantly improve code coverage.
 """
+
 from unittest.mock import Mock
 
 import pytest
@@ -24,29 +25,39 @@ class TestCompleteDTO:
                 email="full@example.com",
                 phone_number="+1234567890",
                 telegram_id="tg456",
-                preferences={"lang": "ru", "notifications": True}
-            )
+                preferences={"lang": "ru", "notifications": True},
+            ),
         ]
 
         for dto in dtos:
-            assert hasattr(dto, 'preferences')
+            assert hasattr(dto, "preferences")
             assert isinstance(dto.preferences, dict)
 
         # SendNotificationDTO variations
         notif_dtos = [
             SendNotificationDTO(recipient_id="u1", message_template="Hi"),
-            SendNotificationDTO(recipient_id="u2", message_template="Hi {name}", message_variables={"name": "John"}),
-            SendNotificationDTO(recipient_id="u3", message_template="Hi", channels=["email"]),
-            SendNotificationDTO(recipient_id="u4", message_template="Hi", priority="HIGH"),
-            SendNotificationDTO(recipient_id="u5", message_template="Hi", metadata={"source": "test"}),
+            SendNotificationDTO(
+                recipient_id="u2",
+                message_template="Hi {name}",
+                message_variables={"name": "John"},
+            ),
+            SendNotificationDTO(
+                recipient_id="u3", message_template="Hi", channels=["email"]
+            ),
+            SendNotificationDTO(
+                recipient_id="u4", message_template="Hi", priority="HIGH"
+            ),
+            SendNotificationDTO(
+                recipient_id="u5", message_template="Hi", metadata={"source": "test"}
+            ),
             SendNotificationDTO(
                 recipient_id="u6",
                 message_template="Full test {name}",
                 message_variables={"name": "Complete"},
                 channels=["email", "sms"],
                 priority="URGENT",
-                metadata={"campaign": "test"}
-            )
+                metadata={"campaign": "test"},
+            ),
         ]
 
         for dto in notif_dtos:
@@ -92,39 +103,44 @@ class TestCompleteEntities:
                 phone_number="+1234567890",
                 telegram_id="tg456",
                 preferences={"lang": "ru"},
-                is_active=False
-            )
+                is_active=False,
+            ),
         ]
 
         for user in users:
             # Test basic properties exist
-            assert hasattr(user, 'id') or hasattr(user, 'user_id')
-            assert hasattr(user, 'email')
+            assert hasattr(user, "id") or hasattr(user, "user_id")
+            assert hasattr(user, "email")
 
             # Test methods if they exist
-            if hasattr(user, 'update_email'):
+            if hasattr(user, "update_email"):
                 user.update_email("updated@example.com")
 
-            if hasattr(user, 'update_phone'):
+            if hasattr(user, "update_phone"):
                 user.update_phone("+0987654321")
 
-            if hasattr(user, 'deactivate'):
+            if hasattr(user, "deactivate"):
                 user.deactivate()
 
-            if hasattr(user, 'activate'):
+            if hasattr(user, "activate"):
                 user.activate()
 
-            if hasattr(user, '__repr__'):
+            if hasattr(user, "__repr__"):
                 repr_str = repr(user)
                 assert isinstance(repr_str, str)
 
-            if hasattr(user, '__eq__'):
-                same_user = User(user_id=user.id if hasattr(user, 'id') else user.user_id, email="same@example.com")
+            if hasattr(user, "__eq__"):
+                same_user = User(
+                    user_id=user.id if hasattr(user, "id") else user.user_id,
+                    email="same@example.com",
+                )
                 try:
                     equality_result = user == same_user
                     assert isinstance(equality_result, bool)
-                except:
-                    pass  # Equality might not be implemented
+                except Exception as e:
+                    # Equality might not be implemented
+                    print(f"Equality comparison failed: {e}")
+                    pass
 
     def test_notification_entity_complete(self):
         """Test Notification entity with all methods."""
@@ -132,33 +148,51 @@ class TestCompleteEntities:
 
         # Test various constructors with required channels parameter
         notifications = [
-            Notification(notification_id="n1", recipient_id="u1", message_template="Hi", channels=["email"]),
-            Notification(notification_id="n2", recipient_id="u2", message_template="Hi", channels=["sms"]),
-            Notification(notification_id="n3", recipient_id="u3", message_template="Hi", channels=["email"], priority="HIGH"),
+            Notification(
+                notification_id="n1",
+                recipient_id="u1",
+                message_template="Hi",
+                channels=["email"],
+            ),
+            Notification(
+                notification_id="n2",
+                recipient_id="u2",
+                message_template="Hi",
+                channels=["sms"],
+            ),
+            Notification(
+                notification_id="n3",
+                recipient_id="u3",
+                message_template="Hi",
+                channels=["email"],
+                priority="HIGH",
+            ),
             Notification(
                 notification_id="n4",
                 recipient_id="u4",
                 message_template="Hi {name}",
                 channels=["email", "sms"],
-                priority="URGENT"
-            )
+                priority="URGENT",
+            ),
         ]
 
         for notification in notifications:
             # Test basic properties
-            assert hasattr(notification, 'id') or hasattr(notification, 'notification_id')
-            assert hasattr(notification, 'recipient_id')
-            assert hasattr(notification, 'message_template')
-            assert hasattr(notification, 'channels')
+            assert hasattr(notification, "id") or hasattr(
+                notification, "notification_id"
+            )
+            assert hasattr(notification, "recipient_id")
+            assert hasattr(notification, "message_template")
+            assert hasattr(notification, "channels")
 
             # Test methods if they exist
-            if hasattr(notification, 'mark_sent'):
+            if hasattr(notification, "mark_sent"):
                 notification.mark_sent()
 
-            if hasattr(notification, 'mark_failed'):
+            if hasattr(notification, "mark_failed"):
                 notification.mark_failed()
 
-            if hasattr(notification, '__repr__'):
+            if hasattr(notification, "__repr__"):
                 repr_str = repr(notification)
                 assert isinstance(repr_str, str)
 
@@ -181,7 +215,7 @@ class TestUseCasesComprehensive:
         dtos = [
             CreateUserDTO(email="test1@example.com"),
             CreateUserDTO(email="test2@example.com", preferences={"lang": "en"}),
-            CreateUserDTO(email="test3@example.com", phone_number="+1234567890")
+            CreateUserDTO(email="test3@example.com", phone_number="+1234567890"),
         ]
 
         results = []
@@ -210,8 +244,12 @@ class TestUseCasesComprehensive:
         # Test different DTOs
         dtos = [
             SendNotificationDTO(recipient_id="u1", message_template="Test 1"),
-            SendNotificationDTO(recipient_id="u2", message_template="Test 2", priority="HIGH"),
-            SendNotificationDTO(recipient_id="u3", message_template="Test 3", channels=["email", "sms"])
+            SendNotificationDTO(
+                recipient_id="u2", message_template="Test 2", priority="HIGH"
+            ),
+            SendNotificationDTO(
+                recipient_id="u3", message_template="Test 3", channels=["email", "sms"]
+            ),
         ]
 
         results = []
@@ -243,14 +281,14 @@ class TestValueObjectsComprehensive:
             phone_objects.append(phone_obj)
 
             # Test value access
-            if hasattr(phone_obj, 'value'):
+            if hasattr(phone_obj, "value"):
                 assert phone_obj.value == phone_str
 
             # Test string representation
             assert str(phone_obj) in [phone_str, phone_str]  # Flexible assertion
 
             # Test repr if exists
-            if hasattr(phone_obj, '__repr__'):
+            if hasattr(phone_obj, "__repr__"):
                 repr_str = repr(phone_obj)
                 assert isinstance(repr_str, str)
 
@@ -265,7 +303,7 @@ class TestValueObjectsComprehensive:
             user_id = UserId(user_id_str)
 
             # Test value access
-            if hasattr(user_id, 'value'):
+            if hasattr(user_id, "value"):
                 assert user_id.value == user_id_str
 
             # Test string representation
@@ -275,8 +313,10 @@ class TestValueObjectsComprehensive:
             same_id = UserId(user_id_str)
             try:
                 assert user_id == same_id
-            except:
-                pass  # Equality might not be implemented
+            except Exception as e:
+                # Equality might not be implemented
+                print(f"UserId equality comparison failed: {e}")
+                pass
 
     def test_notification_value_objects(self):
         """Test notification-related value objects."""
@@ -289,7 +329,7 @@ class TestValueObjectsComprehensive:
             for notif_id_str in notif_ids:
                 notif_id = NotificationId(notif_id_str)
 
-                if hasattr(notif_id, 'value'):
+                if hasattr(notif_id, "value"):
                     assert notif_id.value == notif_id_str
 
                 assert str(notif_id) == notif_id_str
@@ -304,14 +344,14 @@ class TestValueObjectsComprehensive:
         # Get all available statuses
         available_statuses = []
         for attr in dir(DeliveryStatus):
-            if not attr.startswith('_') and hasattr(DeliveryStatus, attr):
+            if not attr.startswith("_") and hasattr(DeliveryStatus, attr):
                 status_val = getattr(DeliveryStatus, attr)
-                if hasattr(status_val, 'value'):
+                if hasattr(status_val, "value"):
                     available_statuses.append(status_val)
 
         # Test each status
         for status in available_statuses:
-            assert hasattr(status, 'value')
+            assert hasattr(status, "value")
             assert isinstance(status.value, str)
 
             # Test string representation
@@ -331,27 +371,33 @@ class TestInfrastructureComprehensive:
         repo = InMemoryUserRepository()
 
         # Test all available methods
-        methods = [method for method in dir(repo) if not method.startswith('_') and callable(getattr(repo, method))]
+        methods = [
+            method
+            for method in dir(repo)
+            if not method.startswith("_") and callable(getattr(repo, method))
+        ]
 
         # Test save method
-        if 'save' in methods:
+        if "save" in methods:
             test_user = {"email": "test@example.com", "id": "test123"}
             try:
                 result = repo.save(test_user)
                 assert result is not None
-            except Exception:
+            except Exception as e:
                 # Method might expect different parameters
+                print(f"Repository save method failed: {e}")
                 pass
 
         # Test find methods
-        find_methods = [m for m in methods if 'find' in m.lower()]
+        find_methods = [m for m in methods if "find" in m.lower()]
         for method_name in find_methods:
             method = getattr(repo, method_name)
             try:
                 # Try calling with test parameter
                 result = method("test_id")
-            except Exception:
+            except Exception as e:
                 # Method might expect different parameters
+                print(f"Repository method {method_name} failed: {e}")
                 pass
 
     def test_config_functionality(self):
@@ -363,10 +409,10 @@ class TestInfrastructureComprehensive:
             assert config is not None
 
             # Test that config is a dict-like object
-            if hasattr(config, 'get'):
+            if hasattr(config, "get"):
                 # Try getting some common config keys
-                config.get('database_url', 'default')
-                config.get('debug', False)
+                config.get("database_url", "default")
+                config.get("debug", False)
 
         except ImportError:
             pytest.skip("Config module not available")
@@ -380,22 +426,22 @@ class TestPresentationComplete:
         from app.presentation.api.main import app
 
         # Test app properties
-        if hasattr(app, 'title'):
+        if hasattr(app, "title"):
             assert isinstance(app.title, str)
 
-        if hasattr(app, 'version'):
+        if hasattr(app, "version"):
             assert isinstance(app.version, str)
 
-        if hasattr(app, 'description'):
+        if hasattr(app, "description"):
             assert isinstance(app.description, str)
 
         # Test routes exist
-        if hasattr(app, 'routes'):
+        if hasattr(app, "routes"):
             assert len(app.routes) > 0
 
             route_paths = []
             for route in app.routes:
-                if hasattr(route, 'path'):
+                if hasattr(route, "path"):
                     route_paths.append(route.path)
 
             # Should have at least some basic routes
@@ -406,8 +452,11 @@ class TestPresentationComplete:
         from app.presentation import dependencies
 
         # Test all available dependency functions
-        dep_functions = [attr for attr in dir(dependencies)
-                        if not attr.startswith('_') and callable(getattr(dependencies, attr))]
+        dep_functions = [
+            attr
+            for attr in dir(dependencies)
+            if not attr.startswith("_") and callable(getattr(dependencies, attr))
+        ]
 
         for func_name in dep_functions:
             func = getattr(dependencies, func_name)
@@ -416,8 +465,9 @@ class TestPresentationComplete:
             try:
                 result = func()
                 assert result is not None
-            except Exception:
+            except Exception as e:
                 # Function might require parameters or dependencies
+                print(f"Dependency function {func_name} failed: {e}")
                 pass
 
 
@@ -460,9 +510,24 @@ def test_entity_instantiation_comprehensive():
     # Test Notification with various parameter combinations
     notifications = []
     notif_params = [
-        {"notification_id": "n1", "recipient_id": "u1", "message_template": "Hi", "channels": ["email"]},
-        {"notification_id": "n2", "recipient_id": "u2", "message_template": "Hello", "channels": ["sms"]},
-        {"notification_id": "n3", "recipient_id": "u3", "message_template": "Hey", "channels": ["email", "sms"]},
+        {
+            "notification_id": "n1",
+            "recipient_id": "u1",
+            "message_template": "Hi",
+            "channels": ["email"],
+        },
+        {
+            "notification_id": "n2",
+            "recipient_id": "u2",
+            "message_template": "Hello",
+            "channels": ["sms"],
+        },
+        {
+            "notification_id": "n3",
+            "recipient_id": "u3",
+            "message_template": "Hey",
+            "channels": ["email", "sms"],
+        },
     ]
 
     for params in notif_params:
@@ -472,12 +537,15 @@ def test_entity_instantiation_comprehensive():
     assert len(notifications) == len(notif_params)
 
 
-@pytest.mark.parametrize("user_id,email", [
-    ("test1", "test1@example.com"),
-    ("test2", "test2@example.com"),
-    ("admin", "admin@example.com"),
-    ("user123", "user123@example.com")
-])
+@pytest.mark.parametrize(
+    "user_id,email",
+    [
+        ("test1", "test1@example.com"),
+        ("test2", "test2@example.com"),
+        ("admin", "admin@example.com"),
+        ("user123", "user123@example.com"),
+    ],
+)
 def test_user_creation_parametrized(user_id, email):
     """Parametrized test for user creation."""
     from app.domain.entities import User
@@ -486,16 +554,18 @@ def test_user_creation_parametrized(user_id, email):
 
     # Basic assertions
     assert user is not None
-    if hasattr(user, 'id'):
+    if hasattr(user, "id"):
         assert user.id == user_id
-    elif hasattr(user, 'user_id'):
+    elif hasattr(user, "user_id"):
         assert user.user_id == user_id
 
     assert user.email == email
 
 
 @pytest.mark.parametrize("priority", ["LOW", "MEDIUM", "HIGH", "URGENT"])
-@pytest.mark.parametrize("channel", [["email"], ["sms"], ["telegram"], ["email", "sms"]])
+@pytest.mark.parametrize(
+    "channel", [["email"], ["sms"], ["telegram"], ["email", "sms"]]
+)
 def test_notification_combinations(priority, channel):
     """Test notification with different priority and channel combinations."""
     from app.application.dto import SendNotificationDTO
@@ -504,7 +574,7 @@ def test_notification_combinations(priority, channel):
         recipient_id="test_user",
         message_template="Test notification",
         priority=priority,
-        channels=channel
+        channels=channel,
     )
 
     assert dto.priority == priority
@@ -526,9 +596,7 @@ def test_edge_cases():
 
     # Empty message variables
     notif_dto = SendNotificationDTO(
-        recipient_id="test",
-        message_template="Simple",
-        message_variables={}
+        recipient_id="test", message_template="Simple", message_variables={}
     )
     assert notif_dto.message_variables == {}
 

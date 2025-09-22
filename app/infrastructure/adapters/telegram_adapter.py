@@ -1,6 +1,7 @@
 """
 Telegram notification adapter.
 """
+
 import logging
 from typing import Any
 
@@ -18,10 +19,7 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
     """Telegram notification provider adapter."""
 
     def __init__(
-        self,
-        bot_token: str,
-        timeout: int = 30,
-        max_message_length: int = 4096
+        self, bot_token: str, timeout: int = 30, max_message_length: int = 4096
     ) -> None:
         self._bot_token = bot_token
         self._timeout = timeout
@@ -58,7 +56,9 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
                         elif error_code == 429:
                             raise Exception(f"Rate limit exceeded: {description}")
                         else:
-                            raise Exception(f"Telegram API error {error_code}: {description}")
+                            raise Exception(
+                                f"Telegram API error {error_code}: {description}"
+                            )
 
                     return result
 
@@ -72,13 +72,13 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
         if not self.can_handle_user(user):
             error = DeliveryError(
                 code="USER_NOT_REACHABLE",
-                message="User does not have Telegram configured or is inactive"
+                message="User does not have Telegram configured or is inactive",
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Cannot send Telegram message to user",
-                error=error
+                error=error,
             )
 
         try:
@@ -90,29 +90,31 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
 
             # Limit message length
             if len(text) > self._max_message_length:
-                text = text[:self._max_message_length - 3] + "..."
+                text = text[: self._max_message_length - 3] + "..."
 
             # Prepare request data
             data = {
-                "chat_id": user.telegram_chat_id.value,
+                "chat_id": user.telegram_chat_id.value if user.telegram_chat_id else "",
                 "text": text,
-                "parse_mode": "Markdown"
+                "parse_mode": "Markdown",
             }
 
             # Send message
             result = await self._make_request("sendMessage", data)
             message_id = result["result"]["message_id"]
 
-            logger.info(f"Telegram message sent to chat {user.telegram_chat_id.value}, message_id: {message_id}")
+            logger.info(
+                f"Telegram message sent to chat {user.telegram_chat_id.value if user.telegram_chat_id else 'unknown'}, message_id: {message_id}"
+            )
 
             return DeliveryResult(
                 success=True,
                 provider=self.name,
-                message=f"Telegram message sent to chat {user.telegram_chat_id.value}",
+                message=f"Telegram message sent to chat {user.telegram_chat_id.value if user.telegram_chat_id else 'unknown'}",
                 metadata={
-                    "chat_id": user.telegram_chat_id.value,
-                    "message_id": message_id
-                }
+                    "chat_id": user.telegram_chat_id.value if user.telegram_chat_id else "",
+                    "message_id": message_id,
+                },
             )
 
         except Exception as e:
@@ -133,13 +135,13 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
             error = DeliveryError(
                 code=error_code,
                 message=error_message,
-                details={"telegram_error": str(e)}
+                details={"telegram_error": str(e)},
             )
             return DeliveryResult(
                 success=False,
                 provider=self.name,
                 message="Failed to send Telegram message",
-                error=error
+                error=error,
             )
 
     async def validate_configuration(self) -> bool:
@@ -149,7 +151,9 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
             result = await self._make_request("getMe", {})
             bot_info = result["result"]
 
-            logger.info(f"Telegram bot validated: @{bot_info['username']} ({bot_info['first_name']})")
+            logger.info(
+                f"Telegram bot validated: @{bot_info['username']} ({bot_info['first_name']})"
+            )
             return True
 
         except Exception as e:

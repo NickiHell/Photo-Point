@@ -46,52 +46,61 @@ class SMSProvider(NotificationProvider):
         if not all([account_sid, auth_token, from_phone]):
             raise ConfigurationError("Missing required SMS configuration")
 
-        return cls(account_sid=account_sid, auth_token=auth_token, from_phone=from_phone)
+        # Type assertions - we know these are not None after the check above
+        assert account_sid is not None
+        assert auth_token is not None
+        assert from_phone is not None
+
+        return cls(
+            account_sid=account_sid, auth_token=auth_token, from_phone=from_phone
+        )
 
     def _normalize_phone_number(self, phone: str) -> str:
         """Нормализовать номер телефона."""
         # Удаляем все символы кроме цифр и +
-        phone = re.sub(r'[^\d+]', '', phone)
+        phone = re.sub(r"[^\d+]", "", phone)
 
         # Если номер начинается не с +, добавляем + и код страны
-        if not phone.startswith('+'):
-            if phone.startswith('8'):
-                phone = '+7' + phone[1:]  # Россия
-            elif phone.startswith('7'):
-                phone = '+' + phone
+        if not phone.startswith("+"):
+            if phone.startswith("8"):
+                phone = "+7" + phone[1:]  # Россия
+            elif phone.startswith("7"):
+                phone = "+" + phone
             else:
-                phone = '+' + phone
+                phone = "+" + phone
 
         return phone
 
-    async def send(self, user: User, message: NotificationMessage) -> NotificationResult:
+    async def send(
+        self, user: User, message: NotificationMessage
+    ) -> NotificationResult:
         """Отправить SMS уведомление."""
         if not self.is_user_reachable(user):
             return NotificationResult(
                 success=False,
                 provider=NotificationType.SMS,
                 message="User phone number is not available",
-                error="No phone number provided"
+                error="No phone number provided",
             )
 
         try:
             # Подготовка сообщения
             rendered_message = message.render()
             # Для SMS используем только содержимое, тема игнорируется
-            content = rendered_message['content']
+            content = rendered_message["content"]
 
             # SMS имеют ограничение по длине (обычно 160 символов для латиницы, 70 для кириллицы)
             if len(content) > 1600:  # Twilio может разбить длинные сообщения
                 content = content[:1597] + "..."
 
             # Нормализация номера телефона
+            if user.phone is None:
+                raise ValueError("User phone number is required for SMS")
             to_phone = self._normalize_phone_number(user.phone)
 
             # Отправка SMS
             message_obj = self.client.messages.create(
-                body=content,
-                from_=self.from_phone,
-                to=to_phone
+                body=content, from_=self.from_phone, to=to_phone
             )
 
             logger.info(f"SMS sent successfully to {to_phone}, SID: {message_obj.sid}")
@@ -102,8 +111,8 @@ class SMSProvider(NotificationProvider):
                 metadata={
                     "recipient": to_phone,
                     "message_sid": message_obj.sid,
-                    "status": message_obj.status
-                }
+                    "status": message_obj.status,
+                },
             )
 
         except TwilioRestException as e:
@@ -115,28 +124,28 @@ class SMSProvider(NotificationProvider):
                     success=False,
                     provider=NotificationType.SMS,
                     message="Authentication failed",
-                    error="Invalid Twilio credentials"
+                    error="Invalid Twilio credentials",
                 )
             elif e.status == 429:
                 return NotificationResult(
                     success=False,
                     provider=NotificationType.SMS,
                     message="Rate limit exceeded",
-                    error="Too many SMS requests"
+                    error="Too many SMS requests",
                 )
             elif e.code == 21614:  # Invalid phone number
                 return NotificationResult(
                     success=False,
                     provider=NotificationType.SMS,
                     message="Invalid phone number",
-                    error=str(e)
+                    error=str(e),
                 )
             else:
                 return NotificationResult(
                     success=False,
                     provider=NotificationType.SMS,
                     message="Twilio API error",
-                    error=str(e)
+                    error=str(e),
                 )
 
         except Exception as e:
@@ -145,7 +154,7 @@ class SMSProvider(NotificationProvider):
                 success=False,
                 provider=NotificationType.SMS,
                 message="Unexpected error occurred",
-                error=str(e)
+                error=str(e),
             )
 
     def is_user_reachable(self, user: User) -> bool:
@@ -154,8 +163,8 @@ class SMSProvider(NotificationProvider):
             return False
 
         # Базовая валидация номера телефона
-        phone = re.sub(r'[^\d+]', '', user.phone)
-        return len(phone) >= 10 and (phone.startswith('+') or phone.isdigit())
+        phone = re.sub(r"[^\d+]", "", user.phone)
+        return len(phone) >= 10 and (phone.startswith("+") or phone.isdigit())
 
     @property
     def provider_name(self) -> str:
@@ -169,11 +178,11 @@ class SMSProvider(NotificationProvider):
             account = self.client.api.accounts(self.account_sid).fetch()
 
             # Проверка формата номера телефона отправителя
-            if not self.from_phone.startswith('+'):
+            if not self.from_phone.startswith("+"):
                 raise ConfigurationError("From phone number must start with '+'")
 
             # Проверка статуса аккаунта
-            if account.status != 'active':
+            if account.status != "active":
                 raise ConfigurationError(f"Twilio account status: {account.status}")
 
             return True

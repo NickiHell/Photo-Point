@@ -1,6 +1,7 @@
 """
 In-memory repository implementations for development and testing.
 """
+
 from datetime import datetime, timedelta
 
 from ...domain.entities.delivery import Delivery
@@ -58,14 +59,13 @@ class InMemoryNotificationRepository(NotificationRepository):
         """Get pending notifications ready to be sent."""
         now = datetime.utcnow()
         pending_notifications = [
-            notification for notification in self._notifications.values()
+            notification
+            for notification in self._notifications.values()
             if notification.is_ready_to_send() and notification.scheduled_at <= now
         ]
 
         # Sort by priority and scheduled time
-        pending_notifications.sort(
-            key=lambda n: (n.priority.value, n.scheduled_at)
-        )
+        pending_notifications.sort(key=lambda n: (n.priority.value, n.scheduled_at))
 
         if limit:
             pending_notifications = pending_notifications[:limit]
@@ -75,7 +75,8 @@ class InMemoryNotificationRepository(NotificationRepository):
     async def get_by_recipient(self, recipient_id: UserId) -> list[Notification]:
         """Get notifications for specific recipient."""
         return [
-            notification for notification in self._notifications.values()
+            notification
+            for notification in self._notifications.values()
             if notification.recipient_id.value == recipient_id.value
         ]
 
@@ -99,17 +100,21 @@ class InMemoryDeliveryRepository(DeliveryRepository):
         """Get delivery by ID."""
         return self._deliveries.get(delivery_id.value)
 
-    async def get_by_notification(self, notification_id: NotificationId) -> list[Delivery]:
+    async def get_by_notification(
+        self, notification_id: NotificationId
+    ) -> list[Delivery]:
         """Get deliveries for specific notification."""
         return [
-            delivery for delivery in self._deliveries.values()
+            delivery
+            for delivery in self._deliveries.values()
             if delivery.notification.id.value == notification_id.value
         ]
 
     async def get_pending_retries(self) -> list[Delivery]:
         """Get deliveries that need to be retried."""
         return [
-            delivery for delivery in self._deliveries.values()
+            delivery
+            for delivery in self._deliveries.values()
             if delivery.status == DeliveryStatus.RETRYING
         ]
 
@@ -117,32 +122,42 @@ class InMemoryDeliveryRepository(DeliveryRepository):
         """Get delivery statistics for the last N days."""
         cutoff_date = datetime.utcnow() - timedelta(days=days)
         recent_deliveries = [
-            delivery for delivery in self._deliveries.values()
+            delivery
+            for delivery in self._deliveries.values()
             if delivery.created_at.replace(tzinfo=None) >= cutoff_date
         ]
 
         total_deliveries = len(recent_deliveries)
-        successful_deliveries = len([
-            d for d in recent_deliveries
-            if d.status == DeliveryStatus.DELIVERED
-        ])
-        failed_deliveries = len([
-            d for d in recent_deliveries
-            if d.status == DeliveryStatus.FAILED
-        ])
-        pending_deliveries = len([
-            d for d in recent_deliveries
-            if d.status in [DeliveryStatus.PENDING, DeliveryStatus.SENT, DeliveryStatus.RETRYING]
-        ])
+        successful_deliveries = len(
+            [d for d in recent_deliveries if d.status == DeliveryStatus.DELIVERED]
+        )
+        failed_deliveries = len(
+            [d for d in recent_deliveries if d.status == DeliveryStatus.FAILED]
+        )
+        pending_deliveries = len(
+            [
+                d
+                for d in recent_deliveries
+                if d.status
+                in [
+                    DeliveryStatus.PENDING,
+                    DeliveryStatus.SENT,
+                    DeliveryStatus.RETRYING,
+                ]
+            ]
+        )
 
         # Calculate average delivery time for successful deliveries
         successful_with_time = [
-            d for d in recent_deliveries
+            d
+            for d in recent_deliveries
             if d.status == DeliveryStatus.DELIVERED and d.get_total_delivery_time()
         ]
         avg_delivery_time = None
         if successful_with_time:
-            avg_delivery_time = sum(d.get_total_delivery_time() for d in successful_with_time) / len(successful_with_time)
+            avg_delivery_time = sum(
+                (d.get_total_delivery_time() or 0.0) for d in successful_with_time  # type: ignore[misc]
+            ) / len(successful_with_time)
 
         # Count by provider
         provider_stats = {}
@@ -161,7 +176,9 @@ class InMemoryDeliveryRepository(DeliveryRepository):
             "successful_deliveries": successful_deliveries,
             "failed_deliveries": failed_deliveries,
             "pending_deliveries": pending_deliveries,
-            "success_rate": (successful_deliveries / total_deliveries * 100) if total_deliveries > 0 else 0,
+            "success_rate": (successful_deliveries / total_deliveries * 100)
+            if total_deliveries > 0
+            else 0,
             "average_delivery_time": avg_delivery_time,
-            "provider_statistics": provider_stats
+            "provider_statistics": provider_stats,
         }
