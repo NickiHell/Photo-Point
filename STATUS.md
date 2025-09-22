@@ -1,18 +1,18 @@
-# 🚀 Clean Architecture Notification Service - READY!
+# Clean Architecture Notification Service - READY!
 
-## ✅ Система работает!
+## Система работает!
 
-### 🏗️ Архитектура
+### Архитектура
 - **Clean Architecture**: 4-слойная архитектура (Domain, Application, Infrastructure, Presentation)
 - **DDD**: Полная реализация Domain-Driven Design
 - **SOLID принципы**: Соблюдены все принципы
 
 ### 🧪 Тестирование
 ```bash
-# ✅ Архитектурные компоненты работают
+# Архитектурные компоненты работают
 /home/nickihell/Workspace/Projects/nickihell/test_photo/.venv/bin/python test_architecture.py
 
-# ✅ FastAPI сервер работает
+# FastAPI сервер работает
 PYTHONPATH=/home/nickihell/Workspace/Projects/nickihell/test_photo/notification_service \
   /home/nickihell/Workspace/Projects/nickihell/test_photo/.venv/bin/python -m uvicorn \
   app.presentation.api.main:app --host 127.0.0.1 --port 8000
@@ -30,13 +30,13 @@ PYTHONPATH=/home/nickihell/Workspace/Projects/nickihell/test_photo/notification_
 - **Python**: 3.13.3
 - **Зависимости**: FastAPI, uvicorn, SQLAlchemy, pytest установлены
 
-### 🐳 Docker
+### Docker
 - Dockerfile готов
 - docker-compose.yml настроен  
 - Образ собирается
 - Makefile команды для Docker
 
-### �️ Инструменты разработки
+###  Инструменты разработки
 - **Ruff**: Современный линтер (замена flake8 + isort + pyupgrade)
 - **Black**: Форматирование кода
 - **MyPy**: Проверка типов
@@ -44,7 +44,7 @@ PYTHONPATH=/home/nickihell/Workspace/Projects/nickihell/test_photo/notification_
 - **Pytest**: Современное тестирование с покрытием кода
 - **Makefile**: Быстрые команды для разработки
 
-### 🔧 Команды для разработчика
+### Команды для разработчика
 ```bash
 # Быстрая настройка
 make setup && source .venv/bin/activate && make dev-install
@@ -63,7 +63,7 @@ make docker-compose # Полный запуск
 make docker-dev     # Для разработки
 ```
 
-### �📦 Структура проекта
+### Структура проекта
 ```
 notification_service/
 ├── app/
@@ -80,7 +80,7 @@ notification_service/
 64 files, 8333+ lines of code
 ```
 
-### 🎯 Результат тестирования
+### Результат тестирования
 ```
 === Testing Clean Architecture ===
 
@@ -100,27 +100,27 @@ notification_service/
 Users in repository: 1
 Notifications sent: 1
 
-✅ All tests passed! Clean Architecture working correctly.
+All tests passed! Clean Architecture working correctly.
 ```
 
-## 🔥 СИСТЕМА ПОЛНОСТЬЮ ГОТОВА К ПРОДАКШЕНУ!
+## СИСТЕМА ПОЛНОСТЬЮ ГОТОВА К ПРОДАКШЕНУ!
 
-### ✅ Что протестировано и работает:
+### Что протестировано и работает:
 
-**🏗️ Clean Architecture (3/3 слоя)**
-- ✅ Domain Layer: User, Notification entities + value objects
-- ✅ Application Layer: DTOs, Use Cases для всех операций  
-- ✅ Infrastructure Layer: Адаптеры, репозитории, конфигурация
-- ✅ Presentation Layer: FastAPI REST API + CLI интерфейс
+**Clean Architecture (3/3 слоя)**
+- Domain Layer: User, Notification entities + value objects
+- Application Layer: DTOs, Use Cases для всех операций  
+- Infrastructure Layer: Адаптеры, репозитории, конфигурация
+- Presentation Layer: FastAPI REST API + CLI интерфейс
 
 **🌐 API Endpoints (все работают)**
-- ✅ `GET /` - Notification Service API  
-- ✅ `GET /health` - Health check
-- ✅ `GET /api/v1/users` - Список пользователей
-- ✅ `POST /api/v1/users` - Создание пользователя
-- ✅ `POST /api/v1/notifications/send` - Отправка уведомлений
+- `GET /` - Notification Service API  
+- `GET /health` - Health check
+- `GET /api/v1/users` - Список пользователей
+- `POST /api/v1/users` - Создание пользователя
+- `POST /api/v1/notifications/send` - Отправка уведомлений
 
 **🐍 Python Environment**
-- ✅ Virtual Environment настроен (.venv)
-- ✅ Python 3.13.3 с полным набором зависимостей
-- ✅ FastAPI, SQLAlchemy, pytest, ruff, black установлены
+- Virtual Environment настроен (.venv)
+- Python 3.13.3 с полным набором зависимостей
+- FastAPI, SQLAlchemy, pytest, ruff, black установлены

@@ -24,11 +24,11 @@ async def main():
         # Настраиваем логирование
         setup_logging("INFO")
 
-        print("✅ Модули загружены успешно")
+        print("Модули загружены успешно")
 
         # Показываем конфигурацию
         config_summary = Config.get_summary()
-        print("📋 Конфигурация:")
+        print("Конфигурация:")
         print(f"   - Email настроен: {config_summary['email_configured']}")
         print(f"   - SMS настроен: {config_summary['sms_configured']}")
         print(f"   - Telegram настроен: {config_summary['telegram_configured']}")
@@ -41,7 +41,7 @@ async def main():
             config_summary['sms_configured'],
             config_summary['telegram_configured']
         ]):
-            print("⚠️  Не настроен ни один провайдер!")
+            print("Не настроен ни один провайдер!")
             print("   Пожалуйста, скопируйте .env.example в .env и заполните необходимые поля.")
             print()
             print("📖 Для запуска демонстрации можно использовать:")
@@ -51,7 +51,7 @@ async def main():
         # Создаем сервис уведомлений
         try:
             service = create_notification_service()
-            print("✅ Сервис уведомлений создан")
+            print("Сервис уведомлений создан")
 
             # Проверяем статус всех провайдеров
             status = await service.get_service_status()
@@ -59,7 +59,7 @@ async def main():
             print(f"   Доступно провайдеров: {status['available_providers']}/{status['total_providers']}")
 
             for provider in status['providers']:
-                icon = "✅" if provider['available'] else "❌"
+                icon = "" if provider['available'] else ""
                 print(f"   {icon} {provider['name']}")
                 if provider['error']:
                     print(f"      Ошибка: {provider['error']}")
@@ -67,7 +67,7 @@ async def main():
             print()
 
             if status['available_providers'] == 0:
-                print("❌ Ни один провайдер не доступен!")
+                print("Ни один провайдер не доступен!")
                 print("   Проверьте настройки в .env файле")
                 return 1
 
@@ -82,7 +82,7 @@ async def main():
 
             # Создаем демонстрационное сообщение
             message = NotificationMessage(
-                subject="🎉 Добро пожаловать в систему уведомлений!",
+                subject="Добро пожаловать в систему уведомлений!",
                 content="""
 Здравствуйте, {user_name}!
 
@@ -92,11 +92,11 @@ async def main():
 🔹 Ваш ID: {user_id}
 
 Система поддерживает:
-✅ Email уведомления
-✅ SMS сообщения
-✅ Telegram уведомления
-✅ Надежную доставку с fallback
-✅ Массовые рассылки
+Email уведомления
+SMS сообщения
+Telegram уведомления
+Надежную доставку с fallback
+Массовые рассылки
 
 С уважением,
 Система уведомлений
@@ -122,8 +122,8 @@ async def main():
             )
 
             print()
-            print("📊 Результат отправки:")
-            print(f"   Успешно: {'✅ Да' if report.success else '❌ Нет'}")
+            print("Результат отправки:")
+            print(f"   Успешно: {'Да' if report.success else 'Нет'}")
             print(f"   Время доставки: {report.delivery_time:.2f} сек")
             print(f"   Попыток: {report.total_attempts}")
 
@@ -135,9 +135,9 @@ async def main():
                 print(f"   Неудачные провайдеры: {', '.join(report.failed_providers)}")
 
             print()
-            print("🔍 Детализация попыток:")
+            print("Детализация попыток:")
             for i, attempt in enumerate(report.attempts, 1):
-                status_icon = "✅" if attempt.result.success else "❌"
+                status_icon = "" if attempt.result.success else ""
                 print(f"   {i}. {attempt.provider.provider_name}: {status_icon}")
                 print(f"      Сообщение: {attempt.result.message}")
                 if attempt.result.error:
@@ -145,9 +145,9 @@ async def main():
 
             print()
             if report.success:
-                print("🎉 Демонстрация завершена успешно!")
+                print("Демонстрация завершена успешно!")
             else:
-                print("⚠️  Демонстрация завершена с ошибками")
+                print("Демонстрация завершена с ошибками")
                 print("   Это нормально, если провайдеры не настроены полностью")
 
             print()
@@ -157,15 +157,15 @@ async def main():
             print("   python examples/reliability_test.py   # Тест надежности")
 
         except Exception as e:
-            print(f"❌ Ошибка при создании сервиса: {e}")
+            print(f"Ошибка при создании сервиса: {e}")
             return 1
 
     except ImportError as e:
-        print(f"❌ Ошибка импорта: {e}")
+        print(f"Ошибка импорта: {e}")
         print("   Убедитесь, что установлены все зависимости: pip install -r requirements.txt")
         return 1
     except Exception as e:
-        print(f"❌ Неожиданная ошибка: {e}")
+        print(f"Неожиданная ошибка: {e}")
         return 1
 
     return 0
@@ -177,8 +177,8 @@ if __name__ == "__main__":
         exit_code = asyncio.run(main())
         sys.exit(exit_code)
     except KeyboardInterrupt:
-        print("\n⚠️  Работа прервана пользователем")
+        print("\nРабота прервана пользователем")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Критическая ошибка: {e}")
+        print(f"\nКритическая ошибка: {e}")
         sys.exit(1)

@@ -3,6 +3,7 @@ Notification sending use cases.
 """
 import asyncio
 import uuid
+import backoff
 
 from ...domain.entities.delivery import Delivery
 from ...domain.entities.notification import Notification
@@ -39,6 +40,12 @@ class SendNotificationUseCase:
         self._delivery_repository = delivery_repository
         self._delivery_service = delivery_service
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError, Exception),
+        max_tries=3,
+        max_time=30
+    )
     async def execute(self, request: SendNotificationRequest) -> OperationResponse:
         """Execute the send notification use case."""
         try:
@@ -114,6 +121,12 @@ class SendNotificationUseCase:
                 errors=[str(e)]
             )
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError),
+        max_tries=3,
+        max_time=15
+    )
     async def _execute_delivery(self, delivery: Delivery) -> DeliveryResponse:
         """Execute the delivery process."""
         delivery.start()
@@ -137,6 +150,12 @@ class SendNotificationUseCase:
 
         return self._create_delivery_response(delivery)
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError),
+        max_tries=2,
+        max_time=10
+    )
     async def _execute_first_success_strategy(self, delivery: Delivery, providers: list) -> None:
         """Execute first success delivery strategy."""
         rendered_message = delivery.notification.render_message()
@@ -171,6 +190,12 @@ class SendNotificationUseCase:
                     result=result
                 )
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError),
+        max_tries=2,
+        max_time=15
+    )
     async def _execute_try_all_strategy(self, delivery: Delivery, providers: list) -> None:
         """Execute try all delivery strategy."""
         rendered_message = delivery.notification.render_message()
@@ -203,6 +228,12 @@ class SendNotificationUseCase:
                     result=result
                 )
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError),
+        max_tries=2,
+        max_time=10
+    )
     async def _execute_fail_fast_strategy(self, delivery: Delivery, providers: list) -> None:
         """Execute fail fast delivery strategy."""
         rendered_message = delivery.notification.render_message()
@@ -284,6 +315,12 @@ class SendBulkNotificationUseCase:
         self._user_repository = user_repository
         self._send_notification_use_case = send_notification_use_case
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError, Exception),
+        max_tries=2,
+        max_time=60
+    )
     async def execute(self, request: BulkNotificationRequest) -> OperationResponse:
         """Execute the bulk notification use case."""
         try:

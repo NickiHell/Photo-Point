@@ -103,12 +103,12 @@ if __name__ == "__main__":
     try:
         success = test_clean_architecture()
         if success:
-            print("\n✅ All tests passed! Clean Architecture working correctly.")
+            print("\nAll tests passed! Clean Architecture working correctly.")
         else:
-            print("\n❌ Tests failed!")
+            print("\nTests failed!")
             sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Error during testing: {e}")
+        print(f"\nError during testing: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

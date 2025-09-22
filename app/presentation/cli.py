@@ -80,7 +80,7 @@ try:
 
             except Exception as e:
                 logger.error("Failed to create user", error=str(e))
-                click.echo(f"❌ Error: {e}")
+                click.echo(f"Error: {e}")
 
         asyncio.run(_create_user())
 
@@ -99,7 +99,7 @@ try:
                 user_response = await use_case.execute(UserId(user_id))
 
                 if user_response:
-                    click.echo("📋 User Information:")
+                    click.echo("User Information:")
                     data = [
                         ["ID", user_response.id],
                         ["Email", user_response.email or "Not set"],
@@ -111,11 +111,11 @@ try:
                     ]
                     click.echo(tabulate(data, headers=["Field", "Value"], tablefmt="grid"))
                 else:
-                    click.echo(f"❌ User {user_id} not found")
+                    click.echo(f"User {user_id} not found")
 
             except Exception as e:
                 logger.error("Failed to get user", error=str(e))
-                click.echo(f"❌ Error: {e}")
+                click.echo(f"Error: {e}")
 
         asyncio.run(_get_user())
 
@@ -179,7 +179,7 @@ try:
 
             except Exception as e:
                 logger.error("Failed to send notification", error=str(e))
-                click.echo(f"❌ Error: {e}")
+                click.echo(f"Error: {e}")
 
         asyncio.run(_send_notification())
 
@@ -198,13 +198,13 @@ try:
                 status_response = await use_case.execute(NotificationId(notification_id))
 
                 if status_response:
-                    click.echo("📋 Notification Status:")
+                    click.echo("Notification Status:")
                     click.echo(f"   ID: {status_response.notification_id}")
                     click.echo(f"   Status: {status_response.status}")
                     click.echo(f"   Created: {status_response.created_at}")
 
                     if status_response.deliveries:
-                        click.echo("\n📦 Deliveries:")
+                        click.echo("\nDeliveries:")
                         delivery_data = []
                         for delivery in status_response.deliveries:
                             delivery_data.append([
@@ -221,11 +221,11 @@ try:
                         click.echo(tabulate(delivery_data, headers=headers, tablefmt="grid"))
 
                 else:
-                    click.echo(f"❌ Notification {notification_id} not found")
+                    click.echo(f"Notification {notification_id} not found")
 
             except Exception as e:
                 logger.error("Failed to get notification status", error=str(e))
-                click.echo(f"❌ Error: {e}")
+                click.echo(f"Error: {e}")
 
         asyncio.run(_get_status())
 
@@ -252,7 +252,7 @@ try:
 
             click.echo(f"Starting server on {host}:{port}")
             if reload:
-                click.echo("🔄 Auto-reload enabled")
+                click.echo("Auto-reload enabled")
 
             uvicorn.run(
                 app,
@@ -263,9 +263,9 @@ try:
             )
 
         except ImportError:
-            click.echo("❌ uvicorn is not installed. Please install it with: pip install uvicorn")
+            click.echo("uvicorn is not installed. Please install it with: pip install uvicorn")
         except Exception as e:
-            click.echo(f"❌ Failed to start server: {e}")
+            click.echo(f"Failed to start server: {e}")
 
 
     if __name__ == '__main__':

@@ -2,6 +2,7 @@
 User management use cases.
 """
 import uuid
+import backoff
 
 from ...domain.entities.user import User
 from ...domain.repositories import UserRepository
@@ -21,6 +22,12 @@ class CreateUserUseCase:
     def __init__(self, user_repository: UserRepository) -> None:
         self._user_repository = user_repository
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError, Exception),
+        max_tries=3,
+        max_time=15
+    )
     async def execute(self, request: CreateUserRequest) -> OperationResponse:
         """Execute the create user use case."""
         try:
@@ -97,6 +104,12 @@ class GetUserUseCase:
     def __init__(self, user_repository: UserRepository) -> None:
         self._user_repository = user_repository
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError),
+        max_tries=2,
+        max_time=10
+    )
     async def execute(self, user_id: str) -> OperationResponse:
         """Execute the get user use case."""
         try:
@@ -149,6 +162,12 @@ class UpdateUserUseCase:
     def __init__(self, user_repository: UserRepository) -> None:
         self._user_repository = user_repository
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError, Exception),
+        max_tries=3,
+        max_time=20
+    )
     async def execute(self, user_id: str, request: UpdateUserRequest) -> OperationResponse:
         """Execute the update user use case."""
         try:
@@ -235,6 +254,12 @@ class GetAllActiveUsersUseCase:
     def __init__(self, user_repository: UserRepository) -> None:
         self._user_repository = user_repository
 
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, TimeoutError),
+        max_tries=2,
+        max_time=10
+    )
     async def execute(self) -> OperationResponse:
         """Execute the get all active users use case."""
         try:
