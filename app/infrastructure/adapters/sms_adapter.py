@@ -95,7 +95,9 @@ class SMSNotificationAdapter(NotificationProviderInterface):
                 content = content[: self._max_message_length - 3] + "..."
 
             # Normalize phone number
-            to_phone = self._normalize_phone_number(user.phone.value if user.phone else "")
+            to_phone = self._normalize_phone_number(
+                user.phone.value if user.phone else ""
+            )
 
             # Send SMS
             message_obj = client.messages.create(

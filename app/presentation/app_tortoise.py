@@ -1,5 +1,5 @@
 """
-Main FastAPI application configuration.
+Main FastAPI application configuration with Tortoise ORM.
 """
 
 from collections.abc import AsyncGenerator

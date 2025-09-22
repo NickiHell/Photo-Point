@@ -1,5 +1,5 @@
 """
-Dependency injection container and dependency providers.
+Dependency injection container and dependency providers for Tortoise ORM.
 """
 
 from typing import Any

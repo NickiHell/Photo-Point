@@ -1,4 +1,4 @@
-.PHONY: help install dev-install test lint format clean docker-build docker-run docker-compose
+.PHONY: help install dev-install test lint format clean docker-build docker-run docker-compose aerich-init aerich-migrate aerich-upgrade
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -47,3 +47,13 @@ clean: ## Clean cache files
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -delete
 	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
+
+aerich-init: ## Initialize Aerich migrations
+	bash scripts/migrations.sh init
+
+aerich-migrate: ## Create a new migration
+	@read -p "Enter migration name: " name; \
+	bash scripts/migrations.sh migrate "$$name"
+
+aerich-upgrade: ## Apply migrations to the database
+	bash scripts/migrations.sh upgrade

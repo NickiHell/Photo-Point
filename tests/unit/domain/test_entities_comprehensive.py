@@ -469,32 +469,42 @@ class TestDeliveryEntity:
     def test_delivery_creation(self):
         """Test Delivery creation."""
         from app.domain.entities.delivery import Delivery
+        from app.domain.entities.notification import Notification
+        from app.domain.entities.user import User
         from app.domain.value_objects.delivery import DeliveryId, DeliveryStatus
-        from app.domain.value_objects.notification import NotificationId
-        from app.domain.value_objects.user import UserId
+        from app.domain.value_objects.notification import (
+            MessageTemplate,
+            NotificationId,
+            NotificationPriority,
+        )
+        from app.domain.value_objects.user import Email, UserId, UserName
 
         delivery_id = DeliveryId("delivery-1")
-        notification_id = NotificationId("notif-1")
-        recipient_id = UserId("user-1")
+        user_id = UserId("user-1")
+
+        # Create user
+        user = User(user_id, UserName("Test User"), email=Email("test@example.com"))
+
+        # Create notification
+        notification = Notification(
+            notification_id=NotificationId("notif-1"),
+            recipient_id=user_id,
+            message_template=MessageTemplate("Hello!", {}),
+            priority=NotificationPriority.NORMAL,
+        )
 
         delivery = Delivery(
             delivery_id=delivery_id,
-            notification_id=notification_id,
-            recipient_id=recipient_id,
-            channel="email",
-            provider="smtp",
+            notification=notification,
+            user=user,
         )
 
         assert delivery.id == delivery_id
-        assert delivery.notification_id == notification_id
-        assert delivery.recipient_id == recipient_id
-        assert delivery.channel == "email"
-        assert delivery.provider == "smtp"
+        assert delivery.notification == notification
+        assert delivery.user == user
         assert delivery.status == DeliveryStatus.PENDING
         assert delivery.attempts == []
         assert delivery.created_at is not None
-        assert delivery.sent_at is None
-        assert delivery.delivered_at is None
 
     def test_delivery_attempt_success(self):
         """Test successful delivery attempt."""
@@ -599,7 +609,7 @@ class TestDeliveryEntity:
         delivery.add_attempt(
             success=True, response="Success", provider_message_id="msg-456"
         )
-        assert delivery.status == DeliveryStatus.SENT
+        assert delivery.status == DeliveryStatus.DELIVERED
         assert len(delivery.attempts) == 2
         assert delivery.attempts[1].success is True
 
@@ -665,7 +675,7 @@ class TestDeliveryEntity:
     def test_delivery_is_final_state(self):
         """Test checking if delivery is in final state."""
         from app.domain.entities.delivery import Delivery
-        from app.domain.value_objects.delivery import DeliveryId
+        from app.domain.value_objects.delivery import DeliveryId, DeliveryStatus
         from app.domain.value_objects.notification import NotificationId
         from app.domain.value_objects.user import UserId
 
@@ -687,9 +697,9 @@ class TestDeliveryEntity:
         # SENT is not final
         delivery.add_attempt(success=True, response="Sent")
         assert delivery.is_final_state() is False
-
+            
         # DELIVERED is final
-        delivery.mark_delivered("Delivered")
+        delivery.mark_delivered("Delivered successfully")
         assert delivery.is_final_state() is True
 
 

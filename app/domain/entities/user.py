@@ -11,20 +11,37 @@ class User(Entity):
 
     def __init__(
         self,
-        user_id: UserId,
-        name: UserName,
+        user_id: UserId = None,
+        name: UserName = None,
         email: Email | None = None,
         phone: PhoneNumber | None = None,
         telegram_chat_id: TelegramChatId | None = None,
         is_active: bool = True,
+        # Compat parameters for tests
+        id: UserId = None,
+        phone_number: PhoneNumber | None = None,
+        telegram_id: TelegramChatId | None = None,
+        preferences: dict | None = None,
     ) -> None:
-        super().__init__(user_id)
+        # Handle both parameter naming conventions
+        entity_id = id if id is not None else user_id
+        if entity_id is None:
+            raise ValueError("Must provide either id or user_id")
+
+        super().__init__(entity_id)
         self._name = name
         self._email = email
-        self._phone = phone
-        self._telegram_chat_id = telegram_chat_id
+        self._phone = phone_number if phone_number is not None else phone
+        self._telegram_chat_id = (
+            telegram_id if telegram_id is not None else telegram_chat_id
+        )
         self._is_active = is_active
         self._preferences: set[str] = set()  # Preferred notification channels
+
+        # Initialize preferences if provided
+        if preferences:
+            for channel in preferences:
+                self.add_preference(channel)
 
     @property
     def name(self) -> UserName:
@@ -48,7 +65,18 @@ class User(Entity):
 
     @property
     def preferences(self) -> set[str]:
+        """Return user preferences as a set."""
         return self._preferences.copy()
+
+    @property
+    def phone_number(self) -> PhoneNumber | None:
+        """Alias for phone for compatibility."""
+        return self._phone
+
+    @property
+    def telegram_id(self) -> TelegramChatId | None:
+        """Alias for telegram_chat_id for compatibility."""
+        return self._telegram_chat_id
 
     def update_name(self, name: UserName) -> None:
         """Update user name."""

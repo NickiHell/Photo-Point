@@ -67,10 +67,10 @@ jobs:
         uv run ruff format . || true
 
     - name: Run type checking with mypy
-      run: uv run mypy app/ --ignore-missing-imports || true
+      run: uv run mypy notification_service/ --ignore-missing-imports || true
 
     - name: Run security check with bandit  
-      run: uv run bandit -r app/ -f json -o bandit-report.json || true
+      run: uv run bandit -r notification_service/ -f json -o bandit-report.json || true
 
     - name: Run tests with pytest
       env:

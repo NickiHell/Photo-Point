@@ -301,16 +301,36 @@ class TestInMemoryDeliveryRepository:
     def sample_delivery(self):
         """Create sample delivery for testing."""
         from app.domain.entities.delivery import Delivery
+        from app.domain.entities.notification import Notification
+        from app.domain.entities.user import User
         from app.domain.value_objects.delivery import DeliveryId
-        from app.domain.value_objects.notification import NotificationId
-        from app.domain.value_objects.user import UserId
+        from app.domain.value_objects.notification import (
+            MessageTemplate,
+            NotificationId,
+            NotificationPriority,
+        )
+        from app.domain.value_objects.user import Email, UserId, UserName
 
+        # Create user
+        user = User(
+            user_id=UserId("user-123"),
+            name=UserName("Test User"),
+            email=Email("test@example.com"),
+        )
+
+        # Create notification
+        notification = Notification(
+            notification_id=NotificationId("notif-123"),
+            recipient_id=UserId("user-123"),
+            message_template=MessageTemplate("Hello!", {}),
+            priority=NotificationPriority.NORMAL,
+        )
+
+        # Create delivery
         return Delivery(
             delivery_id=DeliveryId("delivery-123"),
-            notification=NotificationId("notif-123"),
-            recipient_id=UserId("user-123"),
-            channel="email",
-            provider="smtp",
+            notification=notification,
+            user=user,
         )
 
     @pytest.mark.asyncio
@@ -346,35 +366,38 @@ class TestInMemoryDeliveryRepository:
     async def test_get_deliveries_for_user(self, delivery_repo):
         """Test getting deliveries for specific user."""
         from app.domain.entities.delivery import Delivery
+        from app.domain.entities.notification import Notification
+        from app.domain.entities.user import User
         from app.domain.value_objects.delivery import DeliveryId
-        from app.domain.value_objects.notification import NotificationId
-        from app.domain.value_objects.user import UserId
+        from app.domain.value_objects.notification import (
+            MessageTemplate,
+            NotificationId,
+            NotificationPriority,
+        )
+        from app.domain.value_objects.user import Email, UserId, UserName
 
         user1_id = UserId("user-1")
         user2_id = UserId("user-2")
 
+        # Create users
+        user1 = User(user1_id, UserName("User 1"), email=Email("user1@example.com"))
+        user2 = User(user2_id, UserName("User 2"), email=Email("user2@example.com"))
+
+        # Create notifications
+        notif1 = Notification(
+            NotificationId("notif-1"), user1_id, MessageTemplate("Hello!", {})
+        )
+        notif2 = Notification(
+            NotificationId("notif-2"), user1_id, MessageTemplate("Hi!", {})
+        )
+        notif3 = Notification(
+            NotificationId("notif-3"), user2_id, MessageTemplate("Hey!", {})
+        )
+
         # Create deliveries for different users
-        delivery1 = Delivery(
-            delivery_id=DeliveryId("delivery-1"),
-            notification=NotificationId("notif-1"),
-            recipient_id=user1_id,
-            channel="email",
-            provider="smtp",
-        )
-        delivery2 = Delivery(
-            delivery_id=DeliveryId("delivery-2"),
-            notification=NotificationId("notif-2"),
-            recipient_id=user1_id,
-            channel="sms",
-            provider="twilio",
-        )
-        delivery3 = Delivery(
-            delivery_id=DeliveryId("delivery-3"),
-            notification=NotificationId("notif-3"),
-            recipient_id=user2_id,
-            channel="email",
-            provider="smtp",
-        )
+        delivery1 = Delivery(DeliveryId("delivery-1"), notif1, user1)
+        delivery2 = Delivery(DeliveryId("delivery-2"), notif2, user1)
+        delivery3 = Delivery(DeliveryId("delivery-3"), notif3, user2)
 
         await delivery_repo.save(delivery1)
         await delivery_repo.save(delivery2)
@@ -406,87 +429,35 @@ class TestInMemoryDeliveryRepository:
         assert "delivery-123" in delivery_ids
 
 
-class TestSQLAlchemyRepositories:
-    """Test SQLAlchemy repositories with mocking."""
+class TestTortoiseRepositories:
+    """Test Tortoise ORM repositories."""
 
     @pytest.fixture
-    def mock_session(self):
-        """Create mock AsyncSession."""
-        return AsyncMock()
+    def user_repo(self):
+        """Create TortoiseUserRepository instance."""
+        from app.infrastructure.repositories.tortoise_user_repository import (
+            TortoiseUserRepository,
+        )
+
+        return TortoiseUserRepository()
 
     @pytest.fixture
-    def user_repo(self, mock_session):
-        """Create SQLAlchemyUserRepository with mock session."""
-        from app.infrastructure.repositories.sqlalchemy_repositories import (
-            SQLAlchemyUserRepository,
+    def notification_repo(self):
+        """Create TortoiseNotificationRepository instance."""
+        from app.infrastructure.repositories.tortoise_notification_repository import (
+            TortoiseNotificationRepository,
         )
 
-        return SQLAlchemyUserRepository(mock_session)
+        return TortoiseNotificationRepository()
 
-    @pytest.mark.asyncio
-    async def test_sqlalchemy_user_save(self, user_repo, mock_session):
-        """Test SQLAlchemy user save operation."""
-        from app.domain.entities.user import User
-        from app.domain.value_objects.user import Email, UserId, UserName
-
-        user = User(
-            user_id=UserId("user-123"),
-            name=UserName("Test User"),
-            email=Email("test@gmail.com"),
+    @pytest.fixture
+    def delivery_repo(self):
+        """Create TortoiseDeliveryRepository instance."""
+        from app.infrastructure.repositories.tortoise_delivery_repository import (
+            TortoiseDeliveryRepository,
         )
 
-        # Mock the session operations
-        mock_session.merge.return_value = None
-        mock_session.commit.return_value = None
-
-        await user_repo.save(user)
-
-        # Verify session methods were called
-        mock_session.merge.assert_called_once()
-        mock_session.commit.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_sqlalchemy_user_get_by_id(self, user_repo, mock_session):
-        """Test SQLAlchemy user get by ID."""
-        from app.domain.value_objects.user import UserId
-        from app.infrastructure.repositories.models import UserModel
-
-        # Mock user model
-        mock_user_model = Mock(spec=UserModel)
-        mock_user_model.id = "user-123"
-        mock_user_model.name = "Test User"
-        mock_user_model.email = "test@gmail.com"
-        mock_user_model.phone_number = None
-        mock_user_model.telegram_chat_id = None
-        mock_user_model.is_active = True
-        mock_user_model.preferences = set()
-        mock_user_model.created_at = datetime.now(UTC)
-
-        # Mock session.get to return the mock user model
-        mock_session.get.return_value = mock_user_model
-
-        result = await user_repo.get_by_id(UserId("user-123"))
-
-        # Verify session.get was called
-        mock_session.get.assert_called_once()
-        assert result is not None
-        assert result.id.value == "user-123"
-        assert result.name.value == "Test User"
-
-    @pytest.mark.asyncio
-    async def test_sqlalchemy_user_delete(self, user_repo, mock_session):
-        """Test SQLAlchemy user delete operation."""
-        from app.domain.value_objects.user import UserId
-
-        # Mock delete operation
-        mock_session.execute.return_value = None
-        mock_session.commit.return_value = None
-
-        await user_repo.delete(UserId("user-123"))
-
-        # Verify session methods were called
-        mock_session.execute.assert_called_once()
-        mock_session.commit.assert_called_once()
+        return TortoiseDeliveryRepository()
 
 
 class TestRepositoryErrorHandling:
@@ -521,21 +492,24 @@ class TestRepositoryErrorHandling:
         assert len(all_active) == 10
 
     @pytest.mark.asyncio
-    async def test_sqlalchemy_connection_error(self, mock_session):
-        """Test SQLAlchemy connection error handling."""
+    async def test_tortoise_connection_error(self):
+        """Test Tortoise ORM connection error handling."""
         from app.domain.value_objects.user import UserId
-        from app.infrastructure.repositories.sqlalchemy_repositories import (
-            SQLAlchemyUserRepository,
+        from app.infrastructure.repositories.tortoise_user_repository import (
+            TortoiseUserRepository,
         )
+        from unittest.mock import patch
 
-        # Mock connection error
-        mock_session.get.side_effect = Exception("Database connection failed")
+        # Mock connection error using patch
+        with patch(
+            "tortoise.models.Model.get_or_none",
+            side_effect=Exception("Database connection failed"),
+        ):
+            repo = TortoiseUserRepository()
 
-        repo = SQLAlchemyUserRepository(mock_session)
-
-        # Should raise exception on database error
-        with pytest.raises(Exception, match="Database connection failed"):
-            await repo.get_by_id(UserId("user-123"))
+            # Should raise exception on database error
+            with pytest.raises(Exception, match="Database connection failed"):
+                await repo.get_by_id(UserId("user-123"))
 
 
 def test_all_repositories_import():
@@ -545,10 +519,14 @@ def test_all_repositories_import():
         InMemoryNotificationRepository,
         InMemoryUserRepository,
     )
-    from app.infrastructure.repositories.sqlalchemy_repositories import (
-        SQLAlchemyDeliveryRepository,
-        SQLAlchemyNotificationRepository,
-        SQLAlchemyUserRepository,
+    from app.infrastructure.repositories.tortoise_user_repository import (
+        TortoiseUserRepository,
+    )
+    from app.infrastructure.repositories.tortoise_notification_repository import (
+        TortoiseNotificationRepository,
+    )
+    from app.infrastructure.repositories.tortoise_delivery_repository import (
+        TortoiseDeliveryRepository,
     )
 
     # Basic instantiation test for memory repos
@@ -558,12 +536,12 @@ def test_all_repositories_import():
 
     assert all([user_repo, notif_repo, delivery_repo])
 
-    # SQLAlchemy repos need session, just verify they can be imported
+    # Tortoise repos can be imported
     assert all(
         [
-            SQLAlchemyUserRepository,
-            SQLAlchemyNotificationRepository,
-            SQLAlchemyDeliveryRepository,
+            TortoiseUserRepository,
+            TortoiseNotificationRepository,
+            TortoiseDeliveryRepository,
         ]
     )
 

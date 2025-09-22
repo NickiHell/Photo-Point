@@ -81,7 +81,9 @@ class EmailNotificationAdapter(NotificationProviderInterface):
                 server.login(self._username, self._password)
                 server.send_message(msg)
 
-            logger.info(f"Email sent successfully to {user.email.value if user.email else 'unknown'}")
+            logger.info(
+                f"Email sent successfully to {user.email.value if user.email else 'unknown'}"
+            )
 
             return DeliveryResult(
                 success=True,

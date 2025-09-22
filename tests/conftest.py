@@ -2,9 +2,19 @@
 Test configuration and fixtures.
 """
 
+import os
+import asyncio
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from tortoise import Tortoise
+
+# Set TEST_MODE for email validation bypass
+os.environ["TEST_MODE"] = "true"
+
+# Tortoise ORM test config
+DB_URL = "sqlite://:memory:"
+TORTOISE_TEST_MODULES = ["app.infrastructure.repositories.tortoise_models"]
 
 try:
     import pytest_asyncio

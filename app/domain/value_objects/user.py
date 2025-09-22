@@ -105,7 +105,9 @@ class TelegramChatId(ValueObject):
             int_value = int(str_value)
             if int_value == 0:
                 raise ValueError("Telegram chat ID cannot be 0")
-        except ValueError:
+        except (ValueError, TypeError) as e:
+            if "cannot be 0" in str(e):
+                raise  # Re-raise the "cannot be 0" error
             raise ValueError("Telegram chat ID must be numeric")
 
         self._value = str_value.strip()

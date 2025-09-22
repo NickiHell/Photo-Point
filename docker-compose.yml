@@ -6,6 +6,11 @@ x-environment:
   REDIS_URL: redis://redis:6379/0
   CELERY_BROKER_URL: redis://redis:6379/0
   CELERY_RESULT_BACKEND: redis://redis:6379/0
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_NAME: notification_service
 
 services:
   notification-service:
@@ -92,26 +97,30 @@ services:
       timeout: 10s
       retries: 3
     restart: always
-
-  # worker:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   command: ["python", "-m", "app.presentation.cli", "server", "start", "--host", "0.0.0.0", "--port", "8001"]
-  #   environment:
-  #     <<: *default-env
-  #   volumes:
-  #     - ./app:/app/app
-  #   ports:
-  #     - "8001:8001"
-  #   depends_on:
-  #     - redis
-  #   networks:
-  #     - notification-net
-  #   restart: always
+    
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: notification_service
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - notification-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
 
 volumes:
   redis_data:
+  postgres_data:
 
 networks:
   notification-net:

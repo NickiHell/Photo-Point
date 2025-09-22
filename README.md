@@ -2,6 +2,15 @@
 
 Надежная система для отправки уведомлений пользователям через Email, SMS и Telegram.
 
+## Основные технологии
+
+- **FastAPI** - быстрый API фреймворк
+- **Tortoise ORM** - асинхронный ORM для работы с PostgreSQL
+- **Aerich** - система миграций для Tortoise ORM
+- **Celery** - фоновые задачи и обработка очередей
+- **Redis** - кэширование и брокер сообщений
+- **Clean Architecture** - чистая архитектура с разделением на слои
+
 ## Быстрый старт
 
 ### Запуск с Docker
@@ -52,7 +61,6 @@ docker-compose up
 ### Makefile команды (быстрый доступ)
 
 ```bash
-
 # Настройка проекта с нуля
 make setup          # Создает .venv
 source .venv/bin/activate
@@ -75,6 +83,11 @@ make docker-clean   # Очистка Docker ресурсов
 make clean          # Очистка кэша и временных файлов
 make run-dev        # Запуск dev сервера
 make all            # Полная проверка (clean + lint + format + test)
+
+# Миграции (Aerich)
+make aerich-init    # Инициализация системы миграций
+make aerich-migrate # Создание новой миграции
+make aerich-upgrade # Применение миграций
 ```
 
 
@@ -97,6 +110,16 @@ make all            # Полная проверка (clean + lint + format + tes
 | `RETRY_DELAY` | Задержка между попытками (сек) | `1.0` |
 | `MAX_CONCURRENT` | Максимум параллельных отправок | `10` |
 | `PROVIDER_ORDER` | Порядок провайдеров | `email,telegram,sms` |
+
+### База данных (PostgreSQL)
+
+| Переменная | Описание | По умолчанию |
+|------------|----------|--------------|
+| `DB_USER` | Имя пользователя БД | `postgres` |
+| `DB_PASSWORD` | Пароль БД | `postgres` |
+| `DB_HOST` | Хост БД | `postgres` |
+| `DB_PORT` | Порт БД | `5432` |
+| `DB_NAME` | Имя БД | `notification_service` |
 
 ### Email настройки
 

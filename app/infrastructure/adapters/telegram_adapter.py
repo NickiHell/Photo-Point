@@ -112,7 +112,9 @@ class TelegramNotificationAdapter(NotificationProviderInterface):
                 provider=self.name,
                 message=f"Telegram message sent to chat {user.telegram_chat_id.value if user.telegram_chat_id else 'unknown'}",
                 metadata={
-                    "chat_id": user.telegram_chat_id.value if user.telegram_chat_id else "",
+                    "chat_id": user.telegram_chat_id.value
+                    if user.telegram_chat_id
+                    else "",
                     "message_id": message_id,
                 },
             )
